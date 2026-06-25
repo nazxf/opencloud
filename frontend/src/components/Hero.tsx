@@ -4,7 +4,11 @@ import { useGSAP } from '@gsap/react';
 
 gsap.registerPlugin(useGSAP);
 
-export default function Hero() {
+interface HeroProps {
+  onOpenAuth: () => void;
+}
+
+export default function Hero({ onOpenAuth }: HeroProps) {
   const containerRef = useRef(null);
 
   useGSAP(() => {
@@ -36,11 +40,14 @@ export default function Hero() {
           OpenCloud is a multi-model gateway that gives applications one stable API while provider routing, fallback logic, access control, and traffic visibility stay in one layer.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-          <button className="hero-btn px-6 py-3 text-base font-medium bg-primary text-primary-foreground rounded-full hover:opacity-90 transition-opacity shadow-sm w-full sm:w-auto relative overflow-hidden group">
+          <button 
+            onClick={onOpenAuth}
+            className="hero-btn px-6 py-3 text-base font-medium bg-primary text-primary-foreground rounded-full hover:opacity-90 transition-opacity shadow-sm w-full sm:w-auto relative overflow-hidden group cursor-pointer"
+          >
             <span className="relative z-10">Open console</span>
             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform"></div>
           </button>
-          <button className="hero-btn px-6 py-3 text-base font-medium bg-card text-foreground border border-border rounded-full hover:bg-accent transition-colors w-full sm:w-auto">
+          <button className="hero-btn px-6 py-3 text-base font-medium bg-card text-foreground border border-border rounded-full hover:bg-accent transition-colors w-full sm:w-auto cursor-pointer">
             Read docs
           </button>
         </div>

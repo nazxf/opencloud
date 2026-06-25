@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import LogoMarquee from './components/LogoMarquee';
@@ -5,21 +6,27 @@ import AgentMockup from './components/AgentMockup';
 import Features from './components/Features';
 import Pricing from './components/Pricing';
 import Footer from './components/Footer';
+import AuthModal from './components/AuthModal';
 
 function App() {
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-background-100 selection:bg-tertiary selection:text-white font-sans overflow-x-hidden">
-      <Navbar />
+      <Navbar onOpenAuth={() => setIsAuthModalOpen(true)} />
       <main>
-        <Hero />
+        <Hero onOpenAuth={() => setIsAuthModalOpen(true)} />
         <LogoMarquee />
         <div className="pt-24">
           <AgentMockup />
         </div>
         <Features />
-        <Pricing />
+        <Pricing onOpenAuth={() => setIsAuthModalOpen(true)} />
       </main>
       <Footer />
+      
+      {/* Auth Modal */}
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </div>
   )
 }

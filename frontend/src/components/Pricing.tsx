@@ -6,7 +6,11 @@ import { CheckCircle2 } from 'lucide-react';
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
-export default function Pricing() {
+interface PricingProps {
+  onOpenAuth: () => void;
+}
+
+export default function Pricing({ onOpenAuth }: PricingProps) {
   const sectionRef = useRef(null);
 
   useGSAP(() => {
@@ -42,7 +46,12 @@ export default function Pricing() {
                 </li>
               ))}
             </ul>
-            <button className="w-full py-3 bg-card text-foreground border border-border rounded-full hover:bg-accent transition-colors font-medium">Deploy Now</button>
+            <button 
+              onClick={onOpenAuth}
+              className="w-full py-3 bg-card text-foreground border border-border rounded-full hover:bg-accent transition-colors font-medium cursor-pointer"
+            >
+              Deploy Now
+            </button>
           </div>
           
           {/* Pro */}
@@ -57,7 +66,12 @@ export default function Pricing() {
                 </li>
               ))}
             </ul>
-            <button className="w-full py-3 bg-primary text-primary-foreground rounded-full hover:opacity-90 transition-opacity font-medium shadow-md">Start 14-Day Trial</button>
+            <button 
+              onClick={onOpenAuth}
+              className="w-full py-3 bg-primary text-primary-foreground rounded-full hover:opacity-90 transition-opacity font-medium shadow-md cursor-pointer"
+            >
+              Start 14-Day Trial
+            </button>
           </div>
 
           {/* Enterprise */}
@@ -71,7 +85,12 @@ export default function Pricing() {
                 </li>
               ))}
             </ul>
-            <button className="w-full py-3 bg-card text-foreground border border-border rounded-full hover:bg-accent transition-colors font-medium">Contact Sales</button>
+            <button 
+              onClick={onOpenAuth}
+              className="w-full py-3 bg-card text-[#a19d98] hover:text-foreground border border-border rounded-full hover:bg-white/5 transition-colors font-medium cursor-pointer"
+            >
+              Contact Sales
+            </button>
           </div>
         </div>
       </div>
