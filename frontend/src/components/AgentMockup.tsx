@@ -3,8 +3,6 @@ import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { Play, RotateCcw, Cpu, Terminal, Sliders, BarChart3, Database } from 'lucide-react';
 
-gsap.registerPlugin(useGSAP);
-
 const DEMO_LOGS = [
   "[System] Initializing connection to OpenCloud cluster...",
   "[System] Cloning source repository: github:nazxf/opencloud...",
@@ -18,6 +16,14 @@ const DEMO_LOGS = [
   "[Gateway] Applying rate-limit policy: 500 requests/minute",
   "[Gateway] Spawning intelligent edge routing with 200ms latency fallback...",
   "[Success] Deployment completed. Site is live at: https://opencloud.nazxf.io"
+];
+
+// First matching marker wins; default grey for unmatched lines.
+const LOG_COLORS: [string, string][] = [
+  ['[Success]', 'text-green-400 font-bold'],
+  ['[Error]', 'text-red-400'],
+  ['[System]', 'text-primary/95'],
+  ['[Builder]', 'text-blue-400'],
 ];
 
 export default function AgentMockup() {
@@ -189,17 +195,8 @@ export default function AgentMockup() {
                   </div>
                 ) : (
                   logs.map((log, i) => {
-                    const isSuccess = log.includes('[Success]');
-                    const isError = log.includes('[Error]');
-                    const isSystem = log.includes('[System]');
-                    const isBuilder = log.includes('[Builder]');
-                    
-                    let colorClass = 'text-[#a19d98]';
-                    if (isSuccess) colorClass = 'text-green-400 font-bold';
-                    else if (isError) colorClass = 'text-red-400';
-                    else if (isSystem) colorClass = 'text-primary/95';
-                    else if (isBuilder) colorClass = 'text-blue-400';
-
+                    const match = LOG_COLORS.find(([marker]) => log.includes(marker));
+                    const colorClass = match ? match[1] : 'text-[#a19d98]';
                     return (
                       <div key={i} className={colorClass}>
                         {log}

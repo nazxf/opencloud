@@ -1,10 +1,7 @@
 import { useRef } from 'react';
 import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 import { Globe, Zap, Shield, Cpu } from 'lucide-react';
-
-gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 export default function Features() {
   const sectionRef = useRef(null);

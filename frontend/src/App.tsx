@@ -12,7 +12,7 @@ function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background-100 selection:bg-tertiary selection:text-white font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-background font-sans overflow-x-hidden">
       <Navbar onOpenAuth={() => setIsAuthModalOpen(true)} />
       <main>
         <Hero onOpenAuth={() => setIsAuthModalOpen(true)} />

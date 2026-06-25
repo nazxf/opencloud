@@ -21,6 +21,24 @@ const ROW2_BRANDS = [
   { name: 'Cline', file: 'cline.svg' }
 ];
 
+type Brand = { name: string; file: string };
+
+// Each track is rendered twice back-to-back so the marquee loops seamlessly.
+function Track({ brands, reverse = false }: { brands: Brand[]; reverse?: boolean }) {
+  const style = reverse ? { animationDirection: 'reverse', animationDuration: '35s' } : undefined;
+  return (
+    <>
+      {[0, 1].map((dup) => (
+        <div key={dup} className="flex w-1/2 animate-marquee items-center justify-around" style={style}>
+          {brands.map((brand, i) => (
+            <img key={`${dup}-${i}`} src={`/brands/${brand.file}`} alt={brand.name} className="h-8 md:h-11 opacity-60 hover:opacity-100 transition-opacity invert" />
+          ))}
+        </div>
+      ))}
+    </>
+  );
+}
+
 export default function LogoMarquee() {
   return (
     <section id="providers" className="py-20 border-t border-b border-border bg-background overflow-hidden relative">
@@ -30,32 +48,11 @@ export default function LogoMarquee() {
       <div className="absolute right-0 top-0 bottom-0 w-48 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none"></div>
       
       <div className="flex flex-col gap-8">
-        {/* Row 1 */}
         <div className="flex w-[200%] md:w-[150%]">
-          <div className="flex w-1/2 animate-marquee items-center justify-around">
-            {ROW1_BRANDS.map((brand, i) => (
-              <img key={i} src={`/brands/${brand.file}`} alt={brand.name} className="h-8 md:h-11 opacity-60 hover:opacity-100 transition-opacity invert" />
-            ))}
-          </div>
-          <div className="flex w-1/2 animate-marquee items-center justify-around">
-            {ROW1_BRANDS.map((brand, i) => (
-              <img key={`dup1-${i}`} src={`/brands/${brand.file}`} alt={brand.name} className="h-8 md:h-11 opacity-60 hover:opacity-100 transition-opacity invert" />
-            ))}
-          </div>
+          <Track brands={ROW1_BRANDS} />
         </div>
-
-        {/* Row 2 */}
         <div className="flex w-[200%] md:w-[150%] ml-[-10%]">
-          <div className="flex w-1/2 animate-marquee items-center justify-around" style={{ animationDirection: 'reverse', animationDuration: '35s' }}>
-            {ROW2_BRANDS.map((brand, i) => (
-              <img key={i} src={`/brands/${brand.file}`} alt={brand.name} className="h-8 md:h-11 opacity-60 hover:opacity-100 transition-opacity invert" />
-            ))}
-          </div>
-          <div className="flex w-1/2 animate-marquee items-center justify-around" style={{ animationDirection: 'reverse', animationDuration: '35s' }}>
-            {ROW2_BRANDS.map((brand, i) => (
-              <img key={`dup2-${i}`} src={`/brands/${brand.file}`} alt={brand.name} className="h-8 md:h-11 opacity-60 hover:opacity-100 transition-opacity invert" />
-            ))}
-          </div>
+          <Track brands={ROW2_BRANDS} reverse />
         </div>
       </div>
     </section>

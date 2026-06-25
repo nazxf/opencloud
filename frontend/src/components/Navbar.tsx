@@ -5,6 +5,14 @@ interface NavbarProps {
   onOpenAuth: () => void;
 }
 
+const NAV_LINKS = [
+  { label: 'Features', href: '#features' },
+  { label: 'Providers', href: '#providers' },
+  { label: 'Flow', href: '#flow' },
+  { label: 'FAQ', href: '#faq' },
+  { label: 'Models', href: '#models' },
+];
+
 export default function Navbar({ onOpenAuth }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -37,11 +45,9 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
           
           {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-[#a19d98] hover:text-foreground text-[13px] font-medium transition-colors">Features</a>
-            <a href="#providers" className="text-[#a19d98] hover:text-foreground text-[13px] font-medium transition-colors">Providers</a>
-            <a href="#flow" className="text-[#a19d98] hover:text-foreground text-[13px] font-medium transition-colors">Flow</a>
-            <a href="#faq" className="text-[#a19d98] hover:text-foreground text-[13px] font-medium transition-colors">FAQ</a>
-            <a href="#models" className="text-[#a19d98] hover:text-foreground text-[13px] font-medium transition-colors">Models</a>
+            {NAV_LINKS.map(({ label, href }) => (
+              <a key={href} href={href} className="text-[#a19d98] hover:text-foreground text-[13px] font-medium transition-colors">{label}</a>
+            ))}
           </div>
           
           {/* Desktop Actions */}
@@ -84,41 +90,16 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
         className={`fixed inset-0 z-40 bg-[#161310]/95 backdrop-blur-lg flex flex-col justify-center px-8 transition-all duration-500 ease-in-out md:hidden ${isMobileMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'}`}
       >
         <div className="flex flex-col items-center gap-6 text-center">
-          <a 
-            href="#features" 
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="text-2xl font-medium text-foreground hover:text-primary transition-colors"
-          >
-            Features
-          </a>
-          <a 
-            href="#providers" 
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="text-2xl font-medium text-foreground hover:text-primary transition-colors"
-          >
-            Providers
-          </a>
-          <a 
-            href="#flow" 
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="text-2xl font-medium text-foreground hover:text-primary transition-colors"
-          >
-            Flow
-          </a>
-          <a 
-            href="#faq" 
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="text-2xl font-medium text-foreground hover:text-primary transition-colors"
-          >
-            FAQ
-          </a>
-          <a 
-            href="#models" 
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="text-2xl font-medium text-[#a19d98] hover:text-foreground transition-colors"
-          >
-            Models
-          </a>
+          {NAV_LINKS.map(({ label, href }) => (
+            <a
+              key={href}
+              href={href}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="text-2xl font-medium text-foreground hover:text-primary transition-colors"
+            >
+              {label}
+            </a>
+          ))}
 
           <div className="w-full border-t border-border my-4"></div>
 
