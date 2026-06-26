@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Lock, Mail, User, Hexagon } from 'lucide-react';
 
 interface AuthModalProps {
@@ -11,6 +11,29 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Open: close on Escape, lock background scroll, trap focus inside the dialog.
+  useEffect(() => {
+    if (!isOpen) return;
+    const dialog = dialogRef.current;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key !== 'Tab' || !dialog) return;
+      const f = dialog.querySelectorAll<HTMLElement>('a[href], button, input, [tabindex]:not([tabindex="-1"])');
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    dialog?.focus();
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -29,10 +52,18 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       ></div>
       
       {/* Modal Container */}
-      <div className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-border bg-[#1d1915]/95 shadow-2xl p-8 backdrop-blur-xl animate-float-medium">
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="auth-modal-title"
+        className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-border bg-[#1d1915]/95 shadow-2xl p-8 backdrop-blur-xl animate-float-medium focus:outline-none"
+      >
         {/* Close Button */}
-        <button 
+        <button
           onClick={onClose}
+          aria-label="Close dialog"
           className="absolute right-4 top-4 p-1.5 rounded-full text-[#a19d98] hover:text-foreground hover:bg-white/5 transition-colors"
         >
           <X className="w-5 h-5" />
@@ -43,7 +74,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-3">
             <Hexagon className="w-6 h-6 text-primary" />
           </div>
-          <h3 className="font-serif text-2xl font-medium text-foreground">Welcome to OpenCloud</h3>
+          <h3 id="auth-modal-title" className="font-serif text-2xl font-medium text-foreground">Welcome to OpenCloud</h3>
           <p className="text-xs text-muted-foreground mt-1">Operate your applications with precision</p>
         </div>
 
@@ -69,11 +100,12 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           {activeTab === 'signup' && (
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-[#a19d98]">Full Name</label>
+              <label htmlFor="auth-name" className="text-xs font-semibold uppercase tracking-wider text-[#a19d98]">Full Name</label>
               <div className="relative">
                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-[#a19d98]" />
-                <input 
-                  type="text" 
+                <input
+                  id="auth-name"
+                  type="text"
                   required
                   placeholder="John Doe"
                   value={name}
@@ -85,11 +117,12 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           )}
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-[#a19d98]">Email Address</label>
+            <label htmlFor="auth-email" className="text-xs font-semibold uppercase tracking-wider text-[#a19d98]">Email Address</label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-[#a19d98]" />
-              <input 
-                type="email" 
+              <input
+                id="auth-email"
+                type="email"
                 required
                 placeholder="name@company.com"
                 value={email}
@@ -101,15 +134,16 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
           <div className="space-y-1.5">
             <div className="flex justify-between items-center">
-              <label className="text-xs font-semibold uppercase tracking-wider text-[#a19d98]">Password</label>
+              <label htmlFor="auth-password" className="text-xs font-semibold uppercase tracking-wider text-[#a19d98]">Password</label>
               {activeTab === 'signin' && (
                 <a href="#" className="text-xs text-primary hover:underline">Forgot password?</a>
               )}
             </div>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-[#a19d98]" />
-              <input 
-                type="password" 
+              <input
+                id="auth-password"
+                type="password"
                 required
                 placeholder="••••••••"
                 value={password}

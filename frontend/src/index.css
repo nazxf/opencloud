@@ -70,3 +70,14 @@
   0%, 100% { box-shadow: 0 0 4px #e28c5140; }
   50% { box-shadow: 0 0 12px #e28c51a0; }
 }
+
+/* Honor the OS "reduce motion" setting: kill looping CSS animations and snap transitions.
+   ponytail: covers all CSS animation/transition; GSAP one-shot reveals are brief and left as-is. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

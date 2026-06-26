@@ -24,6 +24,20 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Drawer open: close on Escape and lock background scroll.
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsMobileMenuOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
+
   return (
     <>
       <div className="w-full bg-primary text-primary-foreground text-sm font-medium py-1.5 px-4 text-center z-[100] relative">
@@ -52,8 +66,10 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-5">
             <div className="hidden lg:flex items-center gap-4 mr-2">
-              <span className="text-[#a19d98] text-[13px] font-medium cursor-pointer hover:text-foreground transition-colors">EN</span>
-              <Monitor className="w-4 h-4 text-[#a19d98] cursor-pointer hover:text-foreground transition-colors" />
+              <button type="button" aria-label="Language: English" className="text-[#a19d98] text-[13px] font-medium cursor-pointer hover:text-foreground transition-colors">EN</button>
+              <button type="button" aria-label="Toggle theme" className="text-[#a19d98] cursor-pointer hover:text-foreground transition-colors">
+                <Monitor className="w-4 h-4" />
+              </button>
             </div>
             <a href="https://github.com/nazxf/opencloud" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium text-foreground border border-border rounded-full hover:bg-white/5 transition-colors">
               Docs <ArrowUpRight className="w-3.5 h-3.5" />
@@ -74,8 +90,11 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
             >
               Console
             </button>
-            <button 
+            <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-menu"
               className="p-1 rounded-full text-foreground hover:bg-white/5 transition-colors focus:outline-none cursor-pointer"
             >
               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -85,7 +104,9 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
       </div>
 
       {/* Mobile Drawer Overlay */}
-      <div 
+      <div
+        id="mobile-menu"
+        inert={!isMobileMenuOpen}
         className={`fixed inset-0 z-40 bg-[#161310]/95 backdrop-blur-lg flex flex-col justify-center px-8 transition-all duration-500 ease-in-out md:hidden ${isMobileMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'}`}
       >
         <div className="flex flex-col items-center gap-6 text-center">
