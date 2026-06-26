@@ -45,9 +45,9 @@ export default function Hero({ onOpenAuth }: HeroProps) {
             <span className="relative z-10">Open console</span>
             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform"></div>
           </button>
-          <button className="hero-btn px-6 py-3 text-base font-medium bg-card text-foreground border border-border rounded-full hover:bg-accent transition-colors w-full sm:w-auto cursor-pointer">
+          <a href="https://github.com/nazxf/opencloud" target="_blank" rel="noopener noreferrer" className="hero-btn px-6 py-3 text-base font-medium bg-card text-foreground border border-border rounded-full hover:bg-accent transition-colors w-full sm:w-auto cursor-pointer text-center">
             Read docs
-          </button>
+          </a>
         </div>
         
         <div className="flex flex-wrap justify-center gap-3">

@@ -17,7 +17,7 @@ function App() {
       <main>
         <Hero onOpenAuth={() => setIsAuthModalOpen(true)} />
         <LogoMarquee />
-        <div className="pt-24">
+        <div id="demo" className="pt-24">
           <AgentMockup />
         </div>
         <Features />

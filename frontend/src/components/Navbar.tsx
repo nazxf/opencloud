@@ -6,11 +6,10 @@ interface NavbarProps {
 }
 
 const NAV_LINKS = [
+  { label: 'Demo', href: '#demo' },
   { label: 'Features', href: '#features' },
   { label: 'Providers', href: '#providers' },
-  { label: 'Flow', href: '#flow' },
-  { label: 'FAQ', href: '#faq' },
-  { label: 'Models', href: '#models' },
+  { label: 'Pricing', href: '#pricing' },
 ];
 
 export default function Navbar({ onOpenAuth }: NavbarProps) {
@@ -40,7 +39,7 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
         >
           <div className="flex items-center gap-2">
             <Hexagon className="w-6 h-6 text-foreground" />
-            <span className="font-serif font-medium text-foreground tracking-tight text-xl">OpenModel</span>
+            <span className="font-serif font-medium text-foreground tracking-tight text-xl">OpenCloud</span>
           </div>
           
           {/* Desktop Nav Links */}
@@ -56,9 +55,9 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
               <span className="text-[#a19d98] text-[13px] font-medium cursor-pointer hover:text-foreground transition-colors">EN</span>
               <Monitor className="w-4 h-4 text-[#a19d98] cursor-pointer hover:text-foreground transition-colors" />
             </div>
-            <button className="flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium text-foreground border border-border rounded-full hover:bg-white/5 transition-colors">
+            <a href="https://github.com/nazxf/opencloud" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium text-foreground border border-border rounded-full hover:bg-white/5 transition-colors">
               Docs <ArrowUpRight className="w-3.5 h-3.5" />
-            </button>
+            </a>
             <button 
               onClick={onOpenAuth}
               className="flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium bg-foreground text-background rounded-full hover:opacity-90 transition-opacity"

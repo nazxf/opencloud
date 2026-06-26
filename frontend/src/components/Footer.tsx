@@ -14,16 +14,16 @@ export default function Footer() {
         <div>
           <h4 className="font-semibold text-foreground mb-6">Product</h4>
           <ul className="space-y-4 text-sm text-muted-foreground">
-            <li><a href="#" className="hover:text-foreground transition-colors">Features</a></li>
-            <li><a href="#" className="hover:text-foreground transition-colors">Integrations</a></li>
-            <li><a href="#" className="hover:text-foreground transition-colors">Pricing</a></li>
+            <li><a href="#features" className="hover:text-foreground transition-colors">Features</a></li>
+            <li><a href="#providers" className="hover:text-foreground transition-colors">Integrations</a></li>
+            <li><a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a></li>
             <li><a href="#" className="hover:text-foreground transition-colors">Changelog</a></li>
           </ul>
         </div>
         <div>
           <h4 className="font-semibold text-foreground mb-6">Resources</h4>
           <ul className="space-y-4 text-sm text-muted-foreground">
-            <li><a href="#" className="hover:text-foreground transition-colors">Documentation</a></li>
+            <li><a href="https://github.com/nazxf/opencloud" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Documentation</a></li>
             <li><a href="#" className="hover:text-foreground transition-colors">Blog</a></li>
             <li><a href="#" className="hover:text-foreground transition-colors">Community</a></li>
             <li><a href="#" className="hover:text-foreground transition-colors">Templates</a></li>
@@ -40,7 +40,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="max-w-6xl mx-auto pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
-        <p className="text-sm text-muted-foreground"> 2026 OpenCloud Inc. All rights reserved.</p>
+        <p className="text-sm text-muted-foreground">&copy; 2026 OpenCloud Inc. All rights reserved.</p>
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <span className="flex items-center gap-2 font-medium"><span className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span> All systems operational</span>
         </div>

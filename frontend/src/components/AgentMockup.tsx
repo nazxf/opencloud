@@ -47,7 +47,7 @@ export default function AgentMockup() {
 
   // Log simulation timer
   useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval>;
     if (isSimulating && simulationIndex < DEMO_LOGS.length) {
       interval = setInterval(() => {
         setLogs(prev => [...prev, DEMO_LOGS[simulationIndex]]);
