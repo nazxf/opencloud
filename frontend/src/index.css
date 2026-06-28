@@ -18,21 +18,25 @@
 
 @layer base {
   :root, .dark {
-    --background: #161310;
-    --foreground: #f5f1ea;
-    --card: #1d1915;
-    --card-foreground: #f5f1ea;
-    --primary: #e28c51;
-    --primary-foreground: #1d1915;
-    --border: #fff7ef1a;
-    --muted: #221d18;
-    --muted-foreground: #a99b8b;
-    --accent: #2b241e;
+    --background: oklch(0.151 0.012 50);
+    --foreground: oklch(0.952 0.017 76);
+    --card: oklch(0.184 0.013 50);
+    --card-foreground: oklch(0.952 0.017 76);
+    --primary: oklch(0.676 0.122 50);
+    --primary-foreground: oklch(0.161 0.014 50);
+    --border: oklch(0.952 0.017 76 / 0.12);
+    --muted: oklch(0.219 0.015 50);
+    --muted-foreground: oklch(0.702 0.028 67);
+    --accent: oklch(0.258 0.019 50);
   }
   
   body {
     @apply bg-background text-foreground font-sans antialiased;
     margin: 0;
+  }
+
+  button, a {
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
@@ -43,32 +47,80 @@
   .animate-float-slow {
     animation: float-slow 4s ease-in-out infinite;
   }
-  .animate-badge-shimmer-sweep {
-    animation: badge-shimmer-sweep 3s ease-in-out infinite;
+}
+
+.site-noise {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.16;
+  background-image:
+    radial-gradient(oklch(0.952 0.017 76 / 0.18) 0.7px, transparent 0.7px);
+  background-size: 24px 24px;
+  mask-image: linear-gradient(to bottom, black 0, black 660px, transparent 920px);
+}
+
+.first-screen {
+  position: relative;
+  min-height: 634px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 23%, oklch(0.23 0.018 55 / 0.32), transparent 34rem),
+    linear-gradient(90deg, oklch(0.115 0.01 50) 0, var(--background) 18%, var(--background) 82%, oklch(0.115 0.01 50) 100%);
+}
+
+.first-screen-frame {
+  position: relative;
+  z-index: 1;
+  width: min(1216px, calc(100% - 132px));
+  min-height: calc(100vh - 32px);
+  max-height: 760px;
+  margin: 0 auto;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+
+.diagonal-field {
+  pointer-events: none;
+  position: absolute;
+  inset: 32px 0 0;
+  opacity: 0.7;
+  background-image:
+    repeating-linear-gradient(47deg, transparent 0 214px, oklch(0.952 0.017 76 / 0.115) 215px 216px, transparent 217px 238px),
+    repeating-linear-gradient(47deg, transparent 0 232px, oklch(0.952 0.017 76 / 0.075) 233px 234px, transparent 235px 270px);
+  background-position: calc(50% - 505px) -118px, calc(50% - 328px) 106px;
+  background-size: 760px 760px, 700px 700px;
+  mask-image:
+    linear-gradient(to bottom, transparent 0, black 74px, black 560px, transparent 700px),
+    linear-gradient(to right, transparent 0, black 14%, black 86%, transparent 100%);
+  mask-composite: intersect;
+}
+
+@media (max-width: 767px) {
+  .first-screen {
+    min-height: 760px;
   }
-  .animate-badge-glow-pulse {
-    animation: badge-glow-pulse 2s ease-in-out infinite;
+
+  .first-screen-frame {
+    width: 100%;
+    min-height: 760px;
+    border-inline: 0;
+  }
+
+  .diagonal-field {
+    background-size: 560px 560px, 520px 520px;
   }
 }
 
 @keyframes marquee {
-  0% { transform: translateX(0%); }
-  100% { transform: translateX(-100%); }
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 @keyframes float-slow {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-12px); }
-}
-
-@keyframes badge-shimmer-sweep {
-  0% { transform: translate(-100%) skew(-15deg); }
-  100% { transform: translate(250%) skew(-15deg); }
-}
-
-@keyframes badge-glow-pulse {
-  0%, 100% { box-shadow: 0 0 4px #e28c5140; }
-  50% { box-shadow: 0 0 12px #e28c51a0; }
 }
 
 /* Honor the OS "reduce motion" setting: kill looping CSS animations and snap transitions.

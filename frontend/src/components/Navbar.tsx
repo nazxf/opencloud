@@ -1,20 +1,23 @@
 import { useState, useEffect } from 'react';
-import { Hexagon, Monitor, ArrowUpRight, Menu, X } from 'lucide-react';
+import { ArrowUpRight, Box, Menu, Monitor, X } from 'lucide-react';
+import AnnouncementBanner from './AnnouncementBanner';
 
 interface NavbarProps {
   onOpenAuth: () => void;
 }
 
 const NAV_LINKS = [
-  { label: 'Demo', href: '#demo' },
   { label: 'Features', href: '#features' },
   { label: 'Providers', href: '#providers' },
-  { label: 'Pricing', href: '#pricing' },
+  { label: 'Flow', href: '#flow' },
+  { label: 'FAQ', href: '#faq' },
+  { label: 'Models', href: '#models' },
 ];
 
 export default function Navbar({ onOpenAuth }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeId, setActiveId] = useState('');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -22,6 +25,20 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Scroll-spy: glow the nav link whose section sits in the upper-middle of the viewport.
+  useEffect(() => {
+    const els = NAV_LINKS
+      .map(({ href }) => document.getElementById(href.slice(1)))
+      .filter((el): el is HTMLElement => el !== null);
+    if (!els.length) return;
+    const obs = new IntersectionObserver(
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) setActiveId(e.target.id); }),
+      { rootMargin: '-45% 0px -50% 0px' }
+    );
+    els.forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
   }, []);
 
   // Drawer open: close on Escape and lock background scroll.
@@ -40,50 +57,54 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
 
   return (
     <>
-      <div className="w-full bg-primary text-primary-foreground text-sm font-medium py-1.5 px-4 text-center z-[100] relative">
-        OpenCloud Pro 50% OFF &ndash; Limited Time Only!
-      </div>
+      <AnnouncementBanner />
       
-      <div className={`fixed left-0 right-0 z-50 flex justify-center transition-all duration-500 ease-in-out pointer-events-none ${isScrolled ? 'top-6 px-4' : 'top-[36px] px-0'}`}>
-        <nav className={`pointer-events-auto flex items-center justify-between transition-all duration-500 ease-in-out w-full bg-[#161310]/95 backdrop-blur-md overflow-hidden relative
+      <div className={`fixed left-0 right-0 z-50 flex justify-center px-4 transition-all duration-500 ease-in-out pointer-events-none ${isScrolled ? 'top-5' : 'top-8'}`}>
+        <nav className={`pointer-events-auto grid w-full grid-cols-[1fr_auto_1fr] items-center transition-all duration-500 ease-in-out relative
           ${isScrolled 
-            ? 'max-w-5xl rounded-full border border-border shadow-2xl py-3 px-6' 
-            : 'max-w-full rounded-none border-b border-border py-4 px-6 md:px-12'
+            ? 'max-w-5xl rounded-full border border-border bg-background/86 px-5 py-3 shadow-2xl backdrop-blur-xl' 
+            : 'max-w-[1216px] border-x border-border bg-background/72 px-4 py-[27px] md:px-4'
           }`}
         >
-          <div className="flex items-center gap-2">
-            <Hexagon className="w-6 h-6 text-foreground" />
-            <span className="font-serif font-medium text-foreground tracking-tight text-xl">OpenCloud</span>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Box className="h-7 w-7 text-foreground" strokeWidth={2.6} />
+            <span className="font-serif text-[23px] font-semibold leading-none tracking-[-0.045em] text-foreground">OpenModel</span>
           </div>
           
           {/* Desktop Nav Links */}
-          <div className="hidden md:flex items-center gap-8">
-            {NAV_LINKS.map(({ label, href }) => (
-              <a key={href} href={href} className="text-[#a19d98] hover:text-foreground text-[13px] font-medium transition-colors">{label}</a>
-            ))}
+          <div className="hidden items-center gap-[30px] md:flex">
+            {NAV_LINKS.map(({ label, href }) => {
+              const isActive = activeId === href.slice(1);
+              return (
+                <a key={href} href={href} className={`group relative text-[12px] font-medium transition-colors ${isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                  {label}
+                  <span className={`pointer-events-none absolute left-1/2 -bottom-[18px] h-px w-7 -translate-x-1/2 rounded-full bg-foreground transition-opacity duration-300 ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'}`} />
+                </a>
+              );
+            })}
           </div>
           
           {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-5">
-            <div className="hidden lg:flex items-center gap-4 mr-2">
-              <button type="button" aria-label="Language: English" className="text-[#a19d98] text-[13px] font-medium cursor-pointer hover:text-foreground transition-colors">EN</button>
-              <button type="button" aria-label="Toggle theme" className="text-[#a19d98] cursor-pointer hover:text-foreground transition-colors">
-                <Monitor className="w-4 h-4" />
+          <div className="hidden items-center justify-end gap-3 md:flex">
+            <div className="hidden items-center gap-4 lg:flex">
+              <button type="button" aria-label="Language: English" className="text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground cursor-pointer">EN</button>
+              <button type="button" aria-label="Toggle theme" className="text-muted-foreground transition-colors hover:text-foreground cursor-pointer">
+                <Monitor className="h-3.5 w-3.5" />
               </button>
             </div>
-            <a href="https://github.com/nazxf/opencloud" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium text-foreground border border-border rounded-full hover:bg-white/5 transition-colors">
-              Docs <ArrowUpRight className="w-3.5 h-3.5" />
+            <a href="https://github.com/nazxf/opencloud" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 rounded-full border border-border bg-black/35 px-4 py-2 text-[12px] font-semibold text-foreground transition-colors hover:bg-white/5">
+              Docs <ArrowUpRight className="h-3.5 w-3.5" />
             </a>
             <button 
               onClick={onOpenAuth}
-              className="flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium bg-foreground text-background rounded-full hover:opacity-90 transition-opacity"
+              className="flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-[12px] font-semibold text-background transition-opacity hover:opacity-90 cursor-pointer"
             >
-              Console <ArrowUpRight className="w-3.5 h-3.5" />
+              Console <ArrowUpRight className="h-3.5 w-3.5" />
             </button>
           </div>
 
           {/* Mobile Menu Hamburger Button */}
-          <div className="flex md:hidden items-center gap-3">
+          <div className="flex items-center justify-end gap-3 md:hidden">
             <button 
               onClick={onOpenAuth}
               className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-foreground text-background rounded-full cursor-pointer"
