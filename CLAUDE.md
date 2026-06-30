@@ -35,7 +35,7 @@ Do **not** introduce technologies outside this list without explicit approval.
 |---|---|---|
 | System design, data flow | architecture decisions | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
 | Go control plane | anything in `backend/` | [`docs/BACKEND.md`](docs/BACKEND.md) |
-| Dashboard | anything in `frontend/` | [`docs/FRONTEND.md`](docs/FRONTEND.md) |
+| Dashboard | the Next.js app (`app/`, `src/` at repo root) | [`docs/FRONTEND.md`](docs/FRONTEND.md) |
 | Schema, migrations, Redis | DB or models | [`docs/DATABASE.md`](docs/DATABASE.md) |
 | REST conventions | endpoints | [`docs/API.md`](docs/API.md) |
 | Hestia / hosting stack | provisioner | [`docs/HOSTING.md`](docs/HOSTING.md) |
@@ -118,7 +118,7 @@ go run ./cmd/migrate up   # migrations
 go test ./...             # tests
 golangci-lint run         # lint
 
-# Frontend (frontend/)
+# Frontend (repo root)
 npm run dev               # dev server
 npm run lint              # oxlint
 npm run build             # production build

@@ -1,16 +1,15 @@
+'use client';
+
 import { useState } from 'react';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import LogoMarquee from './components/LogoMarquee';
-import AgentMockup from './components/AgentMockup';
-import Features from './components/Features';
-import Flow from './components/Flow';
-import Models from './components/Models';
-import Pricing from './components/Pricing';
-import FAQ from './components/FAQ';
-import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
-import CookieConsent from './components/CookieConsent';
+
+gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -28,20 +27,9 @@ function App() {
               <LogoMarquee />
             </div>
           </section>
-
-          <div id="demo" className="pt-24">
-            <AgentMockup />
-          </div>
-          <Features />
-          <Flow />
-          <Models />
-          <Pricing onOpenAuth={() => setIsAuthModalOpen(true)} />
-          <FAQ />
         </main>
-        <Footer />
 
         <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-        <CookieConsent />
       </div>
     </div>
   )

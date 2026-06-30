@@ -33,7 +33,7 @@ docker-compose.yml
 
 - `api` and `worker` share the same image (different command); built from
   `backend/Dockerfile` (multi-stage: build → minimal runtime image).
-- `frontend` is built from `frontend/Dockerfile` (Next.js standalone output).
+- `frontend` is built from the repo-root `Dockerfile` (Next.js standalone output).
 - Datastores use named volumes so data survives `docker compose down`.
 - Internal services talk over the Compose network; only the frontend, API, and
   Grafana are exposed to the host.

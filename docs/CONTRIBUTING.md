@@ -20,7 +20,7 @@ cp .env.example .env          # fill in dev values
 docker compose up --build     # full stack
 # or run pieces directly:
 cd backend && go run ./cmd/api
-cd frontend && npm install && npm run dev
+npm install && npm run dev    # frontend (repo root)
 ```
 
 ## 3. Branching

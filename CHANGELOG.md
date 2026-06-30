@@ -25,11 +25,14 @@ Change groups: **Added**, **Changed**, **Deprecated**, **Removed**, **Fixed**,
 - `CLAUDE.md` restructured from a single large document into a concise contract +
   index that links to the detailed `docs/` topic files (single source of truth
   per topic).
-- Frontend migrating from Vite to the Next.js App Router.
+- Frontend moved from `frontend/` to the **repo root** (`app/`, `src/`, `public/`,
+  `package.json`, configs). Docs updated to match the new paths.
 
 ### Removed
-- Legacy Vite frontend artifacts (`vite.config.ts`, `index.html`, `src/main.tsx`)
-  superseded by the Next.js App Router (`app/`). Cleanup in progress.
+- Legacy Vite frontend artifacts (`vite.config.ts`, `index.html`, `src/main.tsx`,
+  `tsconfig.{app,node}.json`) superseded by the Next.js App Router (`app/`).
+- Build/scratch artifacts (`.next/`, `dist/`, `output/`, `.playwright-cli/`,
+  `verify-*.mjs`, `verify.png`) — now git-ignored, not committed.
 
 ---
 

@@ -59,16 +59,20 @@ opencloud/
 ├── ARCHITECTURE.md       # system design
 ├── ROADMAP.md            # phased plan
 ├── CHANGELOG.md          # release history
-├── backend/              # Go control plane
-├── frontend/             # Next.js dashboard
+├── app/                  # Next.js App Router (dashboard + landing)
+├── src/                  # components, styles, assets
+├── public/               # static assets
+├── next.config.ts        # Next.js config
+├── package.json          # frontend dependencies + scripts
+├── backend/              # Go control plane (planned)
 ├── deploy/               # prometheus, grafana, nginx, hestia bootstrap
 ├── docs/                 # detailed topic docs (see below)
 └── docker-compose.yml    # control plane + datastores + monitoring
 ```
 
-> **Status:** the frontend exists and is migrating from Vite to the Next.js App
-> Router; the Go backend is greenfield. Folder paths above describe the target
-> layout. See [`ROADMAP.md`](ROADMAP.md) for what's built.
+> **Status:** the Next.js frontend lives at the repo root (migrated off Vite); the
+> Go backend is greenfield. `backend/`, `deploy/`, and `docker-compose.yml` above
+> describe the target layout. See [`ROADMAP.md`](ROADMAP.md) for what's built.
 
 ## Quick Start
 
@@ -108,9 +112,8 @@ go run ./cmd/api          # HTTP server
 go run ./cmd/worker       # background job worker (separate terminal)
 ```
 
-Frontend:
+Frontend (repo root):
 ```bash
-cd frontend
 npm install
 npm run dev               # http://localhost:3000
 ```

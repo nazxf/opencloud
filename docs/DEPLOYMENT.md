@@ -12,7 +12,7 @@ in [`INFRASTRUCTURE.md`](INFRASTRUCTURE.md); this covers the release process.
 | Artifact | Built from | Contents |
 |---|---|---|
 | `opencloud-backend` image | `backend/Dockerfile` (multi-stage) | Go binary serving both `api` and `worker` (selected by command) |
-| `opencloud-frontend` image | `frontend/Dockerfile` | Next.js standalone build |
+| `opencloud-frontend` image | `Dockerfile` (repo root) | Next.js standalone build |
 
 Images are immutable and tagged by version + git SHA (e.g.
 `opencloud-backend:1.4.0-ab12cd3`). The same image promotes through staging → prod.

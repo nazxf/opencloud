@@ -7,17 +7,17 @@ Design and UX rules: [`UI_GUIDELINES.md`](UI_GUIDELINES.md).
 **Stack:** Next.js (App Router) · React 19 · TypeScript (strict) · Tailwind CSS ·
 shadcn/ui · Lucide React.
 
-> **Migration note:** the app is moving from Vite to the Next.js App Router. Legacy
-> `frontend/src/` components, `vite.config.ts`, and `verify-*.mjs` are artifacts —
-> port what's needed into `app/`/`components/` and delete the originals. Do not
-> extend the Vite tree.
+> **Migration note:** the app has migrated off Vite to the Next.js App Router and now
+> lives at the **repo root** (not under `frontend/`). Landing-page components still
+> live in `src/`; port them into `app/`/`components/` as the dashboard grows. The
+> Vite config and `verify-*.mjs` scratch files have been removed — don't reintroduce them.
 
 ---
 
 ## 1. Folder layout
 
 ```
-frontend/
+. (repo root)
 ├── app/
 │   ├── (marketing)/        # public landing pages
 │   ├── (dashboard)/        # authenticated customer area

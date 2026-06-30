@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowUpRight, Box, Menu, Monitor, X } from 'lucide-react';
+import { ArrowUpRight, Box, Menu, X } from 'lucide-react';
 import AnnouncementBanner from './AnnouncementBanner';
 
 interface NavbarProps {
@@ -7,11 +7,7 @@ interface NavbarProps {
 }
 
 const NAV_LINKS = [
-  { label: 'Features', href: '#features' },
   { label: 'Providers', href: '#providers' },
-  { label: 'Flow', href: '#flow' },
-  { label: 'FAQ', href: '#faq' },
-  { label: 'Models', href: '#models' },
 ];
 
 export default function Navbar({ onOpenAuth }: NavbarProps) {
@@ -59,11 +55,11 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
     <>
       <AnnouncementBanner />
       
-      <div className={`fixed left-0 right-0 z-50 flex justify-center px-4 transition-all duration-500 ease-in-out pointer-events-none ${isScrolled ? 'top-5' : 'top-8'}`}>
-        <nav className={`pointer-events-auto grid w-full grid-cols-[1fr_auto_1fr] items-center transition-all duration-500 ease-in-out relative
-          ${isScrolled 
-            ? 'max-w-5xl rounded-full border border-border bg-background/86 px-5 py-3 shadow-2xl backdrop-blur-xl' 
-            : 'max-w-[1216px] border-x border-border bg-background/72 px-4 py-[27px] md:px-4'
+      <div className={`fixed left-0 right-0 z-50 flex justify-center px-4 transition-[top] duration-300 ease-out pointer-events-none ${isScrolled ? 'top-5' : 'top-8'}`}>
+        <nav className={`pointer-events-auto grid w-full grid-cols-[1fr_auto_1fr] items-center relative backdrop-blur-xl border border-border transition-[max-width,padding,background-color,box-shadow,border-radius,border-color] duration-300 ease-out
+          ${isScrolled
+            ? 'max-w-5xl rounded-full bg-background/75 px-5 py-3 shadow-2xl'
+            : 'max-w-[1216px] rounded-none border-y-transparent bg-background/55 px-4 py-[27px] md:px-4'
           }`}
         >
           <div className="flex min-w-0 items-center gap-2.5">
@@ -86,12 +82,6 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
           
           {/* Desktop Actions */}
           <div className="hidden items-center justify-end gap-3 md:flex">
-            <div className="hidden items-center gap-4 lg:flex">
-              <button type="button" aria-label="Language: English" className="text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground cursor-pointer">EN</button>
-              <button type="button" aria-label="Toggle theme" className="text-muted-foreground transition-colors hover:text-foreground cursor-pointer">
-                <Monitor className="h-3.5 w-3.5" />
-              </button>
-            </div>
             <a href="https://github.com/nazxf/opencloud" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 rounded-full border border-border bg-black/35 px-4 py-2 text-[12px] font-semibold text-foreground transition-colors hover:bg-white/5">
               Docs <ArrowUpRight className="h-3.5 w-3.5" />
             </a>
