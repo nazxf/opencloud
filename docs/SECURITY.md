@@ -1,0 +1,137 @@
+# Security
+
+Security practices for OpenCloud. A hosting platform is a high-value target — it
+holds customer credentials and runs customer code on shared infrastructure. These
+rules are not optional and are never "simplified away" (see [`../CLAUDE.md`](../CLAUDE.md)).
+
+---
+
+## 1. Threat model (summary)
+
+- **Cross-tenant access** — a customer reaching another's data/files/processes.
+  *Mitigation:* `account_id` scoping (app + DB) + Hestia OS-level isolation.
+- **Credential theft** — stolen tokens, passwords, or node keys.
+  *Mitigation:* hashing, short-lived tokens, httpOnly cookies, secret manager.
+- **Injection** — SQL, command, or template injection via customer input.
+  *Mitigation:* parameterized queries, typed Hestia args, input validation.
+- **Abuse / DoS** — brute force, scraping, resource exhaustion.
+  *Mitigation:* rate limiting, Fail2ban, UFW, quotas, timeouts.
+- **Supply chain** — vulnerable dependencies.
+  *Mitigation:* pinned versions, `govulncheck` / `npm audit` in CI.
+
+## 2. Authentication
+
+- **JWT access tokens**, short-lived (~15 min), carrying `sub`, `account_id`,
+  `role`, `exp`. Verified by `middleware/auth` on every protected route.
+- **Refresh tokens**, long-lived, **rotated** on each use, stored server-side in
+  Redis so they can be revoked. Reuse of a revoked token revokes the whole chain.
+- **Passwords** hashed with **bcrypt or argon2id** (never plaintext, never
+  reversible). Enforce a sensible minimum policy; throttle and lock on repeated
+  failures.
+- **Sensitive actions** (delete account, change billing, role change) require
+  re-authentication or 2FA where configured.
+
+## 3. Tokens in the frontend {#tokens}
+
+- Tokens live in **httpOnly, Secure, SameSite cookies** — **never** `localStorage`
+  or client-readable JS.
+- The Next.js BFF attaches the token to backend calls **server-side**; client code
+  never sees it. See [`FRONTEND.md`](FRONTEND.md#3-data-fetching--the-bff).
+- CSRF is mitigated by `SameSite` cookies plus a CSRF token on state-changing
+  cross-site requests where applicable.
+
+## 4. Authorization (RBAC)
+
+- Roles: `customer`, `admin` (extendable). Enforced **server-side** in
+  middleware/services — hiding a button in the UI is not authorization.
+- **Tenant scoping is the #1 invariant:** every customer data path is scoped by
+  `account_id`. A missing scope is a vulnerability, not a style nit. Admin
+  cross-account access is a separate, explicit, **audited** path.
+- Resources the caller can't access return `404`, not `403`, to avoid leaking
+  existence ([`API.md`](API.md#3-status-codes)).
+
+## 5. Input validation & injection
+
+- **Validate and sanitize all input at trust boundaries.** Treat every request as
+  hostile; bind + validate DTOs in handlers ([`BACKEND.md`](BACKEND.md#5-http-layer-gin)).
+- **Parameterized queries only** — Bun handles this. Never build SQL by string
+  concatenation.
+- **No raw shell interpolation** into Hestia commands — typed, validated arguments
+  only. Validate customer-supplied values (domains, DB names, usernames) against
+  strict allowlists before they reach a node.
+- Escape/encode output; the frontend relies on React's escaping plus a strict CSP.
+
+## 6. Secrets management
+
+- All secrets via environment / secret manager, loaded by Viper. **Never commit
+  `.env`**; ship `.env.example` with documented, non-secret defaults.
+- No secrets in source, logs, images, or client bundles / `NEXT_PUBLIC_*`.
+- Rotate credentials on exposure; scope each credential to least privilege (a
+  separate, narrowly-scoped Hestia API key; a DB user that can't `DROP`).
+- Redact secrets at the logging boundary ([`BACKEND.md`](BACKEND.md#11-logging-zap)).
+
+## 7. Transport security
+
+- **HTTPS everywhere** with HSTS. TLS certs via Certbot ([`HOSTING.md`](HOSTING.md#6-ssl--certificates)).
+- TLS for PostgreSQL and Redis connections in production.
+- Internal-only services (metrics, datastores) bound to the private network, never
+  the public internet.
+
+## 8. HTTP headers & CORS
+
+- Strict **Content-Security-Policy**, `X-Content-Type-Options: nosniff`,
+  `X-Frame-Options`/frame-ancestors, `Referrer-Policy`, `Strict-Transport-Security`.
+- **CORS allowlist** (`CORS_ORIGINS`) — never `*` in production.
+
+## 9. Rate limiting & abuse prevention
+
+- Redis-backed rate limits on auth and expensive endpoints; stricter budgets on
+  login/refresh.
+- **Fail2ban** bans IPs after repeated auth failures (SSH and app).
+- **UFW** on every host: default-deny inbound, only required ports open.
+- Per-account resource quotas on nodes prevent one tenant exhausting a host.
+- Timeouts/deadlines on every external call so a slow node can't exhaust pools.
+
+## 10. Node & host hardening
+
+- Containers run as **non-root**, minimal images, read-only filesystems where possible.
+- Hosting nodes: per-customer Linux users, PHP-FPM pools, and MariaDB users for
+  OS-level isolation ([`HOSTING.md`](HOSTING.md#5-isolation-on-the-node)).
+- SSH: key-only, no root login, bastion-restricted. Automatic security updates.
+- Node bootstrap (Fail2ban + UFW + hardening) is scripted under `deploy/hestia/`
+  for reproducibility.
+
+## 11. Dependency & supply-chain security
+
+- Pin dependency versions (`go.mod`, `package-lock.json`).
+- CI runs `govulncheck` (Go) and `npm audit` (frontend); patch promptly.
+- Review new dependencies before adding — prefer stdlib/installed packages
+  ([`../CLAUDE.md`](../CLAUDE.md)).
+
+## 12. Audit logging
+
+- Sensitive actions — provisioning, suspension, deletion, billing, role and
+  password changes — are written to an **append-only** `audit_logs` trail with
+  actor, target, and metadata ([`DATABASE.md`](DATABASE.md#3-core-schema)).
+- Audit logs are retained and protected from tampering; they are not customer-editable.
+
+## 13. Data protection & privacy
+
+- Customer DB credentials are shown **once** on creation and not stored in
+  plaintext.
+- Money stored as integer minor units; PII access is logged.
+- Backups are encrypted at rest and access-controlled ([`DATABASE.md`](DATABASE.md#9-backups)).
+
+## 14. Secure SDLC
+
+- Threat-aware code review on every PR; security-sensitive changes flagged.
+- Secrets scanning in CI to catch accidental commits.
+- No security control is removed to "simplify" — if a change weakens one, call it
+  out explicitly and get sign-off.
+
+## 15. Incident response
+
+- On suspected compromise: rotate affected credentials, revoke refresh-token
+  chains, review `audit_logs`, and isolate the affected node (`draining` → offline).
+- Post-incident: write/refresh a runbook in `docs/runbooks/` and an ADR if the
+  architecture changes. Notify per policy/regulation.

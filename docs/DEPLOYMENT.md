@@ -1,0 +1,125 @@
+# Deployment
+
+How OpenCloud is built, released, and rolled back. Packaging and environments are
+in [`INFRASTRUCTURE.md`](INFRASTRUCTURE.md); this covers the release process.
+
+**Stack:** Docker · Docker Compose · CI (build/lint/test) · Bun migrations.
+
+---
+
+## 1. Artifacts
+
+| Artifact | Built from | Contents |
+|---|---|---|
+| `opencloud-backend` image | `backend/Dockerfile` (multi-stage) | Go binary serving both `api` and `worker` (selected by command) |
+| `opencloud-frontend` image | `frontend/Dockerfile` | Next.js standalone build |
+
+Images are immutable and tagged by version + git SHA (e.g.
+`opencloud-backend:1.4.0-ab12cd3`). The same image promotes through staging → prod.
+
+## 2. CI pipeline
+
+Runs on every PR and on merge to `main`. **Merges are blocked unless CI is green.**
+
+```
+1. Backend:  gofmt check · golangci-lint · go test ./... · govulncheck · docker build
+2. Frontend: oxlint · tsc --noEmit · npm run build · npm audit
+3. On main:  build + push tagged images
+```
+
+See [`TESTING.md`](TESTING.md) for the test layers and [`CONTRIBUTING.md`](CONTRIBUTING.md)
+for the PR workflow.
+
+## 3. Environments & promotion
+
+```
+feature branch → PR (CI) → merge to main → deploy staging → verify → promote to production
+```
+
+- **development** — local Docker Compose; fake provisioner.
+- **staging** — mirrors production config against a test Hestia node; auto-deployed
+  from `main`.
+- **production** — promoted from a verified staging build; manual approval gate.
+
+Config differs only by environment variables ([`INFRASTRUCTURE.md`](INFRASTRUCTURE.md#3-configuration--environment-variables)).
+
+## 4. Database migrations
+
+- Migrations run as an explicit deploy step, **before** the new app version starts:
+  ```bash
+  go run ./cmd/migrate up
+  ```
+- Production is **forward-only**; never edit a shipped migration — add a new one.
+- Migrations must be **backward-compatible** with the currently-running app version
+  so a deploy (or rollback) never breaks live traffic. The pattern for breaking
+  schema changes is **expand → migrate → contract**:
+  1. *Expand:* add new columns/tables; deploy app that writes both old + new.
+  2. *Migrate:* backfill data.
+  3. *Contract:* deploy app that uses only new; later migration drops the old.
+- A failed migration aborts the deploy; the previous version keeps serving.
+
+## 5. Deploy procedure (Compose)
+
+```bash
+git pull                              # or check out the release tag
+docker compose pull                   # fetch new images (or build)
+go run ./cmd/migrate up               # via a one-shot migrate container
+docker compose up -d --no-deps api worker frontend
+docker compose ps                     # verify health
+curl -fsS localhost:8080/readyz       # readiness gate
+```
+
+- `api` and `worker` are stateless → replaceable without data loss.
+- Roll services one at a time behind the proxy for zero-downtime where the
+  orchestrator supports it.
+
+## 6. Zero-downtime considerations
+
+- **Stateless services** (API, worker, frontend) scale horizontally and roll
+  without draining state — sessions/queues live in Redis.
+- **Readiness gating:** new instances take traffic only after `/readyz` passes.
+- **Graceful shutdown:** on `SIGTERM` the API drains in-flight HTTP and the worker
+  finishes its current job before exiting ([`BACKEND.md`](BACKEND.md#3-entry-points)).
+- **Backward-compatible migrations** (above) keep old and new app versions working
+  against the same schema during a rollout.
+
+## 7. Rollback
+
+- **App:** redeploy the previous image tag. Because services are stateless and
+  migrations are backward-compatible, this is safe and fast.
+- **Schema:** prefer rolling *forward* with a fix. Only run a `down` migration if it
+  is known-safe for current data; destructive `down`s are avoided in production.
+- **Data:** restore from PostgreSQL backups only as a last resort, following the
+  rehearsed restore runbook ([`DATABASE.md`](DATABASE.md#9-backups)).
+
+## 8. Hosting node provisioning
+
+- Hosting nodes are **not** part of the app deploy — they run Hestia on the host.
+- A new node is bootstrapped with the scripts in `deploy/hestia/` (install Hestia,
+  apply Fail2ban + UFW + hardening), then registered in the `nodes` table.
+- Node OS and Hestia upgrades follow their own maintenance window, draining the
+  node first ([`HOSTING.md`](HOSTING.md)).
+
+## 9. Secrets & config at deploy time
+
+- Production secrets come from the orchestrator's secret store, injected as env
+  vars — never baked into images or committed.
+- Changing a secret (e.g. rotating `JWT_SECRET`) is a deliberate, documented
+  operation; rotating the JWT signing key invalidates active access tokens
+  (clients refresh).
+
+## 10. Post-deploy verification
+
+After every production deploy:
+1. `/healthz` and `/readyz` green on all instances.
+2. Error rate and latency steady in Grafana ([`INFRASTRUCTURE.md`](INFRASTRUCTURE.md#5-monitoring-prometheus--grafana)).
+3. A smoke test of a critical flow (login → list sites).
+4. Queue depth draining normally; no failed-job spike.
+
+If any check fails, roll back (§7) and investigate before re-attempting.
+
+## 11. Release tagging & changelog
+
+- Tag releases with SemVer (`vMAJOR.MINOR.PATCH`).
+- Move `CHANGELOG.md`'s **[Unreleased]** section under the new version + date on
+  release ([`../CHANGELOG.md`](../CHANGELOG.md)).

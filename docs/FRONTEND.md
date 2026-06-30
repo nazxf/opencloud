@@ -1,0 +1,159 @@
+# Frontend — Next.js Dashboard
+
+The OpenCloud dashboard is a Next.js (App Router) application: the customer
+self-service UI and the operator admin panel. Contract: [`../CLAUDE.md`](../CLAUDE.md).
+Design and UX rules: [`UI_GUIDELINES.md`](UI_GUIDELINES.md).
+
+**Stack:** Next.js (App Router) · React 19 · TypeScript (strict) · Tailwind CSS ·
+shadcn/ui · Lucide React.
+
+> **Migration note:** the app is moving from Vite to the Next.js App Router. Legacy
+> `frontend/src/` components, `vite.config.ts`, and `verify-*.mjs` are artifacts —
+> port what's needed into `app/`/`components/` and delete the originals. Do not
+> extend the Vite tree.
+
+---
+
+## 1. Folder layout
+
+```
+frontend/
+├── app/
+│   ├── (marketing)/        # public landing pages
+│   ├── (dashboard)/        # authenticated customer area
+│   │   ├── layout.tsx       # shell: nav, auth guard
+│   │   ├── sites/           # route = folder; page.tsx, loading.tsx, error.tsx
+│   │   └── ...
+│   ├── (admin)/            # operator area (role-gated)
+│   ├── api/                # route handlers — BFF only, no business logic
+│   ├── layout.tsx          # root layout, fonts, providers
+│   └── page.tsx
+├── components/
+│   ├── ui/                 # shadcn/ui primitives (generated)
+│   └── ...                 # feature components
+├── lib/
+│   ├── api-client.ts       # typed fetch wrapper → backend
+│   ├── auth.ts             # server-side session/token helpers
+│   ├── utils.ts            # cn() and friends
+│   └── hooks/              # client hooks
+├── public/
+├── next.config.ts
+└── package.json
+```
+
+Route groups `(marketing)`, `(dashboard)`, `(admin)` separate the three audiences
+without affecting URLs.
+
+## 2. Rendering model
+
+- **Server Components by default.** Fetch on the server, ship less JS.
+- Add `"use client"` **only** when you need interactivity (state, effects, event
+  handlers). Keep client components small and at the leaves.
+- Use `loading.tsx` for streaming/suspense and `error.tsx` for error boundaries on
+  every async route segment. These are mandatory, not optional.
+
+```tsx
+// app/(dashboard)/sites/page.tsx — Server Component
+import { api } from "@/lib/api-client";
+import { SiteList } from "@/components/site-list";
+
+export default async function SitesPage() {
+  const { data } = await api.sites.list();   // runs on the server
+  return <SiteList sites={data} />;
+}
+```
+
+## 3. Data fetching & the BFF
+
+- **All** backend calls go through the typed client in `lib/api-client.ts`.
+  Components never call `fetch` directly.
+- The Next.js server (route handlers + server components) is the **BFF**: it holds
+  the JWT in an httpOnly cookie and attaches it to backend calls. Tokens never
+  reach client JavaScript. See [`SECURITY.md`](SECURITY.md#tokens).
+- Mutations from client components call a route handler under `app/api/…`, which
+  forwards to the backend with the session token. Route handlers contain **no
+  business logic** — they are a thin secure proxy.
+
+```ts
+// lib/api-client.ts
+export class ApiError extends Error {
+  constructor(public code: string, message: string, public status: number) { super(message); }
+}
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${process.env.API_URL}${path}`, {
+    ...init,
+    headers: { "Content-Type": "application/json", ...authHeader(), ...init?.headers },
+  });
+  const body = await res.json();
+  if (!res.ok) throw new ApiError(body.error.code, body.error.message, res.status);
+  return body.data as T;
+}
+```
+
+## 4. State management
+
+- **Server state** (data from the backend) is fetched in Server Components or
+  cached route handlers — not mirrored into a global client store.
+- **Client state** is local (`useState`/`useReducer`) or, for cross-tree concerns
+  (theme, current user), a small React Context. No Redux unless a real need appears.
+- Prefer URL/searchParams for shareable state (filters, pagination) over client state.
+
+## 5. Components & styling
+
+- **shadcn/ui** is the component baseline. Compose its primitives in
+  `components/ui/`. Don't add a second component library.
+- Generated primitives may be edited, but keep the shadcn structure so upstream
+  updates stay mergeable.
+- **Tailwind only.** No CSS-in-JS, no ad-hoc stylesheets beyond `globals.css`.
+  Compose class names with the `cn()` helper; share patterns via Tailwind config,
+  not copy-paste.
+- **Lucide React** for icons — one set, imported per-icon (tree-shaken).
+
+```tsx
+import { cn } from "@/lib/utils";
+import { Server } from "lucide-react";
+
+export function NodeBadge({ online, className }: { online: boolean; className?: string }) {
+  return (
+    <span className={cn("inline-flex items-center gap-1 text-sm", online ? "text-emerald-600" : "text-red-600", className)}>
+      <Server className="size-4" /> {online ? "Online" : "Offline"}
+    </span>
+  );
+}
+```
+
+## 6. Forms & validation
+
+- Forms are controlled and validated client-side for UX, then **always**
+  re-validated server-side. Never trust the browser.
+- Show field-level errors mapped from the backend's validation envelope.
+- Destructive actions (delete site, suspend account) require an explicit confirm dialog.
+
+## 7. TypeScript rules
+
+- `strict: true`. **No `any`** — use `unknown` + narrowing or a real type.
+- Shared shapes (API responses, domain models) live in typed modules and are
+  imported, not redeclared inline.
+- Keep backend DTOs and frontend types in sync; treat the API envelope as the contract.
+
+## 8. Accessibility & UX
+
+Non-negotiable basics — see [`UI_GUIDELINES.md`](UI_GUIDELINES.md) for the full set:
+
+- Semantic HTML, labeled inputs, visible focus rings, AA contrast.
+- Every async view designs its empty / loading / error / success states.
+- Keyboard-navigable and responsive (laptop + phone).
+
+## 9. Tooling & scripts
+
+```bash
+npm run dev     # next dev — http://localhost:3000
+npm run build   # production build
+npm run start   # serve production build
+npm run lint    # oxlint
+```
+
+- Lint with **oxlint** (configured in `.oxlintrc.json`); type-check with `tsc`.
+- No secrets in client code or `NEXT_PUBLIC_*` vars. Anything sensitive stays
+  server-side. See [`SECURITY.md`](SECURITY.md).
