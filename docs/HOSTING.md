@@ -72,7 +72,7 @@ type Provisioner interface {
 
 ## 4. Provisioning flows
 
-All flows are **asynchronous** (queued to Redis, run by the worker) and update the
+All flows are **asynchronous** (queued via the `jobs` table, run by the worker) and update the
 resource's `status`. The control plane reconciles its state with the node's.
 
 ### Create a site

@@ -42,7 +42,7 @@ Hestia as a provisioning backend.
 | Layer | Technologies |
 |---|---|
 | **Backend** | Go · Gin · Bun ORM · PostgreSQL · Redis · Viper · Zap |
-| **Frontend** | Next.js · React · TypeScript · Tailwind CSS · shadcn/ui · Lucide React |
+| **Frontend** | Next.js · React · TypeScript · Tailwind CSS · shadcn/ui · Lucide React · GSAP |
 | **Hosting** | Hestia Control Panel · Nginx · Apache · PHP-FPM · MariaDB · BIND9 · Certbot |
 | **Platform** | Docker · Docker Compose |
 | **Monitoring** | Prometheus · Grafana |

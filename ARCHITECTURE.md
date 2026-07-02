@@ -51,14 +51,15 @@ The control plane drives the data plane exclusively through the **provisioner**
                            │           │           │
                 ┌──────────▼─┐  ┌──────▼─────┐  ┌──▼──────────────┐
                 │ PostgreSQL │  │   Redis    │  │  Hestia node(s) │  ← data plane
-                │ (Bun ORM)  │  │ cache·queue│  │  API + CLI       │
+                │ (Bun ORM)  │  │   cache    │  │  API + CLI       │
                 │ system of  │  │ ·sessions  │  └──┬──────────────┘
-                │  record    │  └─────┬──────┘     │
-                └────────────┘        │            │ provisions / manages
-                                      │   Nginx · Apache · PHP-FPM ·
-                            ┌─────────▼──────┐     MariaDB · BIND9 · Certbot
-                            │  Worker (jobs) │
-                            └────────────────┘
+                │  record +  │  │ ·ratelimit │     │
+                │ job queue  │  └────────────┘     │ provisions / manages
+                └─────┬──────┘                     │
+                      │ polls jobs         Nginx · Apache · PHP-FPM ·
+                ┌─────▼──────────┐         MariaDB · BIND9 · Certbot
+                │  Worker (jobs) │
+                └────────────────┘
 
       Monitoring: Prometheus scrapes API + nodes → Grafana dashboards
       Host hardening: Fail2ban + UFW on every node
@@ -107,8 +108,9 @@ request:
 
 ```
 POST /api/v1/sites
- → handler validates, service creates a `sites` row (status=provisioning) in a tx,
-   enqueues a "provision_site" job to Redis, returns 202 + site id
+ → handler validates, service creates a `sites` row (status=provisioning) AND a
+   `jobs` row ("provision_site") in the same tx, returns 202 + site id
+   — one transaction, so a site row can never exist without its job (or vice versa)
  → worker picks up the job:
      provisioner.CreateSite(ctx, node, spec)   // idempotent Hestia calls
      on success → mark site active
@@ -122,7 +124,7 @@ service rolls back or marks `failed` — never leaves orphaned state). See
 
 ## 7. Data model overview
 
-PostgreSQL is the **system of record**; Redis is a disposable cache/queue.
+PostgreSQL is the **system of record** (and the job queue); Redis is a disposable cache.
 
 - `accounts` — the tenant boundary. Every customer-owned row carries `account_id`.
 - `users` — belong to an account; carry a `role` (`customer`, `admin`).
@@ -130,7 +132,8 @@ PostgreSQL is the **system of record**; Redis is a disposable cache/queue.
 - `nodes` — hosting servers running Hestia.
 - `sites`, `domains`, `databases`, `mailboxes`, `dns_zones`, `certificates` —
   customer resources, each linked to an `account_id` and a `node_id`.
-- `jobs` — async work + status (mirrors the Redis queue for durability/audit).
+- `jobs` — **the job queue itself**: async work + status, claimed by the worker
+  with `FOR UPDATE SKIP LOCKED` ([ADR 0002](docs/adr/0002-postgres-backed-job-queue.md)).
 - `audit_logs` — append-only record of sensitive actions.
 
 Full schema, conventions, and migration rules: [`docs/DATABASE.md`](docs/DATABASE.md).
@@ -150,11 +153,14 @@ Isolation is the platform's #1 invariant, enforced at three layers:
 ## 9. Scaling
 
 - **API & worker** are stateless → scale horizontally behind a load balancer.
-  Sessions and queues live in Redis, not in process memory.
+  Sessions live in Redis and the job queue in PostgreSQL, not in process memory;
+  `SKIP LOCKED` lets multiple workers claim jobs without double-processing.
 - **PostgreSQL** scales vertically first, then with read replicas for reporting.
 - **Hosting nodes** scale out: register a new `nodes` row, and the scheduler places
   new accounts on the least-loaded node. Existing accounts are unaffected.
-- **Redis** can move to a managed/clustered deployment as queue volume grows.
+- **Redis** can move to a managed deployment as cache/session volume grows. If job
+  volume ever outgrows the Postgres queue, introducing a dedicated queue is a new
+  ADR superseding [ADR 0002](docs/adr/0002-postgres-backed-job-queue.md).
 
 ## 10. Failure handling
 
@@ -170,8 +176,8 @@ Isolation is the platform's #1 invariant, enforced at three layers:
 |---|---|
 | **Go + Gin** | Fast, concurrent, simple deploys; great for an orchestration API. |
 | **Bun** | Lightweight, explicit SQL-first ORM — no heavy magic. |
-| **PostgreSQL** | Strong constraints + transactions for the system of record. |
-| **Redis** | One tool for cache, sessions, and the job queue. |
+| **PostgreSQL** | Strong constraints + transactions for the system of record — and the job queue (`SKIP LOCKED`), so enqueueing is transactional with the write that triggers it. |
+| **Redis** | Cache, sessions, and rate limiting. |
 | **Viper/Zap** | Standard, structured config + logging. |
 | **Next.js** | SSR dashboard + BFF for secure token handling. |
 | **shadcn/ui + Tailwind** | Own the components; no heavyweight UI dependency. |

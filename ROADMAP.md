@@ -10,9 +10,9 @@ on the last. Status legend: ✅ done · 🚧 in progress · ⏳ planned.
 
 ## Current status
 
-The frontend marketing/landing surface exists and is migrating from Vite to the
-Next.js App Router. The Go backend, datastores, and provisioning are greenfield.
-We are in **Phase 0 → Phase 1**.
+The frontend marketing/landing surface exists on the Next.js App Router at the
+repo root (Vite fully removed). The Go backend, datastores, and provisioning are
+greenfield. We are in **Phase 0 → Phase 1**.
 
 ---
 
@@ -21,7 +21,7 @@ We are in **Phase 0 → Phase 1**.
 Stand up the skeleton everything else hangs off.
 
 - ✅ Documentation set + conventions (`CLAUDE.md`, `docs/`)
-- 🚧 Frontend migration to Next.js App Router; remove legacy Vite artifacts
+- ✅ Frontend migration to Next.js App Router; legacy Vite artifacts removed
 - ⏳ Go backend scaffold: `cmd/api`, `cmd/worker`, layered packages, config (Viper), logging (Zap)
 - ⏳ PostgreSQL + Redis wired via Docker Compose
 - ⏳ Bun migration tooling + initial schema (`accounts`, `users`)
@@ -48,7 +48,8 @@ The heart of the platform: drive Hestia.
 
 - `provisioner` package: idempotent Hestia API/CLI client + fake for tests
 - `nodes` registry + simple least-loaded placement
-- Redis job queue + worker with retries/backoff and compensating cleanup
+- Postgres-backed job queue (`jobs` table + `SKIP LOCKED`) + worker with
+  retries/backoff and compensating cleanup
 - Site lifecycle: create → active → suspend → delete (async, status-polled)
 - Database lifecycle: MariaDB DB + user provisioning
 - Reconciliation job: detect/repair control-plane ↔ node drift

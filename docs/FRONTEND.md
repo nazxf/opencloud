@@ -5,7 +5,7 @@ self-service UI and the operator admin panel. Contract: [`../CLAUDE.md`](../CLAU
 Design and UX rules: [`UI_GUIDELINES.md`](UI_GUIDELINES.md).
 
 **Stack:** Next.js (App Router) · React 19 · TypeScript (strict) · Tailwind CSS ·
-shadcn/ui · Lucide React.
+shadcn/ui · Lucide React · GSAP (`@gsap/react`) · Geist fonts via `@fontsource`.
 
 > **Migration note:** the app has migrated off Vite to the Next.js App Router and now
 > lives at the **repo root** (not under `frontend/`). Landing-page components still
@@ -109,6 +109,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   Compose class names with the `cn()` helper; share patterns via Tailwind config,
   not copy-paste.
 - **Lucide React** for icons — one set, imported per-icon (tree-shaken).
+- **GSAP** (`@gsap/react`, `ScrollTrigger`) is for the marketing/landing surface
+  only. Dashboard interactions use CSS/Tailwind transitions; don't add a second
+  animation library.
 
 ```tsx
 import { cn } from "@/lib/utils";

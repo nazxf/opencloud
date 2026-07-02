@@ -92,7 +92,9 @@ CREATE TABLE sites (
 CREATE INDEX idx_sites_account_id ON sites(account_id);
 CREATE INDEX idx_sites_node_id    ON sites(node_id);
 
--- jobs: durable mirror of the Redis async queue (audit + recovery)
+-- jobs: THE async job queue (ADR 0002) — workers claim with FOR UPDATE SKIP LOCKED.
+-- Enqueue is an INSERT in the same tx as the triggering write, so resource + job
+-- commit or roll back together.
 CREATE TABLE jobs (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     account_id  UUID REFERENCES accounts(id) ON DELETE SET NULL,
@@ -100,12 +102,13 @@ CREATE TABLE jobs (
     status      TEXT NOT NULL DEFAULT 'queued'
                 CHECK (status IN ('queued','running','succeeded','failed')),
     attempts    INT  NOT NULL DEFAULT 0,
+    run_at      TIMESTAMPTZ NOT NULL DEFAULT now(),  -- future = retry backoff
     payload     JSONB NOT NULL,
     last_error  TEXT,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX idx_jobs_status ON jobs(status);
+CREATE INDEX idx_jobs_claim ON jobs(status, run_at);  -- matches the worker's claim query
 
 -- audit_logs: append-only record of sensitive actions
 CREATE TABLE audit_logs (
@@ -179,13 +182,14 @@ go run ./cmd/migrate down      # roll back one (dev)
 
 ## 8. Redis usage
 
-Redis serves three roles; all are disposable:
+Redis serves three roles; all are disposable. The **job queue is not one of them** —
+it lives in the `jobs` table (§3, [ADR 0002](adr/0002-postgres-backed-job-queue.md))
+so enqueueing stays transactional with the system of record.
 
 | Role | Keys / pattern | Notes |
 |---|---|---|
 | **Cache** | `cache:plans`, `cache:node:{id}:status` | explicit TTLs; invalidate on write |
 | **Sessions** | `session:{refresh_token_id}` | refresh-token store; enables revocation/rotation |
-| **Job queue** | list/stream per job kind | durable mirror in `jobs` table |
 | **Rate limit** | `ratelimit:{ip}:{route}` | sliding window counters |
 
 Rules:

@@ -76,7 +76,7 @@ curl -fsS localhost:8080/readyz       # readiness gate
 ## 6. Zero-downtime considerations
 
 - **Stateless services** (API, worker, frontend) scale horizontally and roll
-  without draining state — sessions/queues live in Redis.
+  without draining state — sessions live in Redis, the job queue in PostgreSQL.
 - **Readiness gating:** new instances take traffic only after `/readyz` passes.
 - **Graceful shutdown:** on `SIGTERM` the API drains in-flight HTTP and the worker
   finishes its current job before exiting ([`BACKEND.md`](BACKEND.md#3-entry-points)).

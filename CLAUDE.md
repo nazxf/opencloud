@@ -23,7 +23,7 @@ Full context: [`README.md`](README.md) · [`ARCHITECTURE.md`](ARCHITECTURE.md) �
 ## 2. Tech stack (authoritative)
 
 - **Backend:** Go · Gin · Bun ORM · PostgreSQL · Redis · Viper · Zap
-- **Frontend:** Next.js (App Router) · React · TypeScript · Tailwind CSS · shadcn/ui · Lucide React
+- **Frontend:** Next.js (App Router) · React · TypeScript · Tailwind CSS · shadcn/ui · Lucide React · GSAP (marketing animations only)
 - **Hosting:** Hestia · Nginx · Apache · PHP-FPM · MariaDB · BIND9 · Certbot
 - **Platform:** Docker · Docker Compose · Prometheus · Grafana · Fail2ban · UFW
 
@@ -53,8 +53,8 @@ Architecture decisions are recorded in [`docs/adr/`](docs/adr/).
 
 ```
 Customer/Admin → Next.js dashboard → Go/Gin API (/api/v1, JWT)
-                                       ├─ PostgreSQL (Bun)   system of record
-                                       ├─ Redis              cache · sessions · job queue
+                                       ├─ PostgreSQL (Bun)   system of record · job queue
+                                       ├─ Redis              cache · sessions · rate limits
                                        └─ Provisioner ──→ Hestia node
                                                             (Nginx · Apache · PHP-FPM ·
                                                              MariaDB · BIND9 · Certbot)
@@ -70,7 +70,8 @@ handler (Gin) → service (logic, transactions) → repository (Bun) → Postgre
 - Services own business rules and transactions; the only layer spanning repos/provisioner.
 - Repositories own all DB access; **every customer query is scoped by `account_id`**.
 - The provisioner is the **only** thing that talks to a hosting node, and it is idempotent.
-- Work that can exceed ~1s is **enqueued to Redis** and handled by the worker, not run inline.
+- Work that can exceed ~1s is **enqueued as a `jobs` row** (same transaction as the
+  write that triggered it) and handled by the worker, not run inline.
 
 ## 5. AI Coding Rules (apply every time)
 

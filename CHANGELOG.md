@@ -20,8 +20,18 @@ Change groups: **Added**, **Changed**, **Deprecated**, **Removed**, **Fixed**,
   guidelines, contributing).
 - Architecture Decision Records: `docs/adr/` with template and ADR 0001
   (Hestia as a provisioning backend).
+- ADR 0002: the `jobs` table in PostgreSQL **is** the job queue (claimed via
+  `FOR UPDATE SKIP LOCKED`); Redis no longer plays a queue role. Fixes the
+  dual-write flaw where a Redis enqueue was not transactional with the
+  PostgreSQL write that triggered it. Docs updated: `ARCHITECTURE.md`,
+  `CLAUDE.md`, `docs/BACKEND.md`, `docs/DATABASE.md` (adds `jobs.run_at` +
+  claim index), `docs/HOSTING.md`, `ROADMAP.md`.
 
 ### Changed
+- GSAP (`@gsap/react`) and Geist fonts (`@fontsource`) — already in use by the
+  landing page — are now part of the documented frontend stack (GSAP scoped to
+  the marketing surface only).
+- `package.json` name corrected from `frontend` to `opencloud`.
 - `CLAUDE.md` restructured from a single large document into a concise contract +
   index that links to the detailed `docs/` topic files (single source of truth
   per topic).
@@ -33,6 +43,8 @@ Change groups: **Added**, **Changed**, **Deprecated**, **Removed**, **Fixed**,
   `tsconfig.{app,node}.json`) superseded by the Next.js App Router (`app/`).
 - Build/scratch artifacts (`.next/`, `dist/`, `output/`, `.playwright-cli/`,
   `verify-*.mjs`, `verify.png`) — now git-ignored, not committed.
+- Remaining Vite scaffold leftovers: `src/assets/vite.svg`, `src/assets/react.svg`
+  (unreferenced) and the empty `frontend/` directory.
 
 ---
 

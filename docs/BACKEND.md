@@ -25,7 +25,7 @@ backend/
 │   ├── model/             # domain structs + Bun models
 │   ├── provisioner/       # Hestia API/CLI client (+ fake)
 │   ├── middleware/        # auth, request-id, logging, recovery, ratelimit
-│   ├── queue/             # Redis job queue + job handlers
+│   ├── queue/             # Postgres-backed job queue + job handlers
 │   ├── dto/               # request/response shapes
 │   └── apperr/            # typed application errors
 ├── pkg/                   # genuinely reusable, import-safe packages
@@ -53,7 +53,8 @@ a repository. No shortcuts.
 
 - **`cmd/api`** — builds config → logger → DB pool → Redis → repositories →
   services → router, then serves HTTP with graceful shutdown on `SIGTERM`.
-- **`cmd/worker`** — same wiring minus the HTTP server; consumes the Redis queue.
+- **`cmd/worker`** — same wiring minus the HTTP server; polls the `jobs` table for
+  queued work.
 - **`cmd/migrate`** — runs Bun migrations (`up`, `down`, `status`).
 
 Both `api` and `worker` share the same `internal/` code; they differ only in what
@@ -126,8 +127,8 @@ func (s *SiteService) Create(ctx context.Context, acct uuid.UUID, req dto.Create
     return database.InTx(ctx, s.db, func(tx bun.Tx) (*model.Site, error) {
         site := model.NewSite(acct, req)
         if err := s.repo.Create(ctx, tx, site); err != nil { return nil, err }
-        if err := s.queue.Enqueue(ctx, queue.ProvisionSite{SiteID: site.ID}); err != nil {
-            return nil, err // tx rolls back; nothing was provisioned
+        if err := s.queue.Enqueue(ctx, tx, queue.ProvisionSite{SiteID: site.ID}); err != nil {
+            return nil, err // same tx: site row and job row commit or roll back together
         }
         return site, nil
     })
@@ -172,13 +173,33 @@ type SiteProvisioner interface {
 - A `fakeProvisioner` implements the interface for tests so we **never** provision
   against a real node in CI. Hosting flows: [`HOSTING.md`](HOSTING.md).
 
-## 9. Async jobs (Redis queue)
+## 9. Async jobs (Postgres queue)
 
 - Anything that can exceed ~1s (provisioning, SSL, backups, email) is **enqueued**,
   not run inline. The handler returns `202` + a resource/job id to poll.
-- Jobs are durable: a `jobs` row mirrors queue state for audit and recovery.
-- The worker retries with backoff; after N failures it marks the job `failed` and
-  enqueues compensating cleanup. No orphaned half-provisioned resources.
+- The **`jobs` table is the queue** ([ADR 0002](adr/0002-postgres-backed-job-queue.md)).
+  `Enqueue` is an `INSERT` inside the caller's transaction, so a resource row and
+  its job commit or roll back **together** — no dual-write against a second store.
+- The worker claims work with `FOR UPDATE SKIP LOCKED`, so multiple workers never
+  double-process a job:
+
+```sql
+UPDATE jobs SET status = 'running', attempts = attempts + 1, updated_at = now()
+WHERE id = (
+    SELECT id FROM jobs
+    WHERE status = 'queued' AND run_at <= now()
+    ORDER BY created_at
+    FOR UPDATE SKIP LOCKED
+    LIMIT 1
+)
+RETURNING *;
+```
+
+- **Retries:** on failure, set `status='queued'` and push `run_at` forward
+  (exponential backoff). After N attempts mark the job `failed` and enqueue
+  compensating cleanup. No orphaned half-provisioned resources.
+- **Crash recovery:** a periodic reaper re-queues jobs stuck in `running` past a
+  timeout — safe because the provisioner is idempotent.
 
 ```go
 type Job interface { Kind() string }
