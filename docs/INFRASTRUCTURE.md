@@ -13,7 +13,8 @@ release process in [`DEPLOYMENT.md`](DEPLOYMENT.md).
 | Plane | Components | Runtime |
 |---|---|---|
 | **Control plane** | Go API, worker, Next.js frontend, PostgreSQL, Redis, Prometheus, Grafana | Docker containers |
-| **Data plane** | Hestia + Nginx/Apache/PHP-FPM/MariaDB/BIND9/Certbot | Host OS on each hosting node (not containerized) |
+| **Data plane** | Hestia + Nginx/Apache/PHP-FPM/MariaDB/Certbot (BIND9 installed, fallback only) | Host OS on each hosting node (not containerized) |
+| **Edge** | Cloudflare DNS + Tunnel ([ADR 0003](adr/0003-cloudflare-dns-and-ingress.md)) | Cloudflare network; `cloudflared` runs on our hardware |
 
 Only the control plane is containerized. Hosting nodes run Hestia directly on the
 host for performance and OS-level tenant isolation.

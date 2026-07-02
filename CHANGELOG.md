@@ -14,6 +14,23 @@ Change groups: **Added**, **Changed**, **Deprecated**, **Removed**, **Fixed**,
 ## [Unreleased]
 
 ### Added
+- ADR 0003: **Cloudflare is the authoritative DNS and ingress path** — customer
+  zones managed via the Cloudflare API by the provisioner; inbound traffic via
+  Cloudflare Tunnel (`cloudflared`), so self-hosted nodes work behind CGNAT
+  without a static IP. BIND9 demoted to documented fallback. Docs updated:
+  `ARCHITECTURE.md` (adds the self-hosted-first design goal), `CLAUDE.md`,
+  `README.md`, `docs/HOSTING.md`, `docs/INFRASTRUCTURE.md`, `ROADMAP.md`.
+- ADR 0004: launch scope for services that can't be self-hosted — email
+  deferred until a clean-IP mail path exists, domains are bring-your-own,
+  payments start as manual bank transfer (gateway lands in Phase 5).
+- Approved supporting libraries recorded in the stack: Go — `golang-jwt/jwt/v5`,
+  `x/crypto` (argon2id), `google/uuid`, `prometheus/client_golang`,
+  `go-redis/redis_rate`, `testify` (`docs/BACKEND.md` §13); frontend (dashboard
+  phase) — TanStack Query/Table, react-hook-form + zod, Recharts, Vitest +
+  Testing Library (`docs/FRONTEND.md`, `docs/TESTING.md`).
+- Roadmap: Hestia integration spike added to Phase 0; basic `pg_dump` backups
+  moved from Phase 6 into Phase 2's exit criteria; usage metering pipeline made
+  an explicit Phase 4 item so Phase 5 billing has historical data.
 - `.env.example` with documented, non-secret defaults (referenced by README and
   `docs/INFRASTRUCTURE.md` but previously missing).
 - CI workflow (`.github/workflows/ci.yml`): frontend lint, type-check, build,

@@ -76,6 +76,8 @@ func TestSiteService_Create_RollsBackOnEnqueueFailure(t *testing.T) {
 
 ## 6. Frontend tests
 
+- Tooling: **Vitest + React Testing Library** (added when the dashboard starts —
+  the marketing surface doesn't warrant it).
 - **Component tests** for logic-bearing components (forms, state, conditional
   rendering) — render + assert behavior, not implementation details.
 - Mock the API client; assert components handle loading/empty/error/success states.

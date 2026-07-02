@@ -20,7 +20,7 @@ provisioner package.
 | **Apache HTTP Server** | Application server behind Nginx for PHP apps (`.htaccess` compatibility). |
 | **PHP-FPM** | Runs PHP per site, with per-customer pools for isolation. |
 | **MariaDB** | Customer databases and DB users. |
-| **BIND9** | Authoritative DNS for customer zones. |
+| **BIND9** | Installed with Hestia; **fallback only** — production DNS is Cloudflare ([ADR 0003](adr/0003-cloudflare-dns-and-ingress.md)). |
 | **Certbot** | Let's Encrypt certificate issuance and renewal. |
 
 > Nginx → Apache → PHP-FPM is the standard layered setup: Nginx handles TLS,
@@ -29,7 +29,9 @@ provisioner package.
 ## 2. How OpenCloud talks to Hestia
 
 - The **provisioner** is the only component that touches a node. It uses Hestia's
-  API (and CLI where the API is thin) over an authenticated, TLS channel.
+  API (and CLI where the API is thin) over an authenticated, TLS channel. It is
+  also the sole caller of the **Cloudflare API** for customer DNS zones/records
+  ([ADR 0003](adr/0003-cloudflare-dns-and-ingress.md)).
 - Every provisioner operation is **idempotent**: creating a site/DB/zone that
   already exists succeeds rather than errors. This makes job retries and drift
   reconciliation safe.
@@ -86,7 +88,7 @@ resource's `status`. The control plane reconciles its state with the node's.
 
 ### Add a domain + SSL
 ```
-1. attach domain to site (DNS zone via BIND9 if we're authoritative)
+1. attach domain to site (DNS zone via the Cloudflare API — ADR 0003)
 2. enqueue issue_certificate
 3. provisioner.IssueCertificate (Certbot) → store cert metadata, status=active
 4. renewal handled on the node by Certbot; control plane tracks expiry
@@ -124,12 +126,19 @@ This is the third isolation layer described in
   fire before expiry (monitoring — [`INFRASTRUCTURE.md`](INFRASTRUCTURE.md)).
 - HTTPS is enforced (HSTS) for customer sites and the dashboard.
 
-## 7. DNS (BIND9)
+## 7. DNS & ingress (Cloudflare — ADR 0003)
 
-- When OpenCloud is authoritative, zones and records are managed via the
-  provisioner against BIND9.
+- Customer zones live in the platform's Cloudflare account. Customers **bring
+  their own domain** and point it at the Cloudflare-assigned nameservers.
 - Record changes go through the API (`/dns/zones/{id}/records`) → provisioner →
-  zone reload. Propagation status is surfaced in the UI.
+  **Cloudflare API**. Propagation status is surfaced in the UI.
+- Inbound traffic (dashboard, API, customer sites) enters through **Cloudflare
+  Tunnel** (`cloudflared`, outbound-only) — no static IP or open inbound ports
+  required on our hardware. The tunnel carries HTTP(S) only: customer file
+  access starts with the web file manager, not raw FTP/SFTP.
+- BIND9 on the nodes is the documented **fallback** (self-hosted Hestia DNS
+  cluster, `v-add-remote-dns-host`) if Cloudflare must ever be dropped — see
+  [ADR 0003](adr/0003-cloudflare-dns-and-ingress.md).
 
 ## 8. Backups
 

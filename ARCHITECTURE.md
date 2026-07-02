@@ -14,6 +14,9 @@ files. Decisions are recorded as ADRs in [`docs/adr/`](docs/adr/).
 4. **Observability** — every account and node is measurable.
 5. **Secure by default** — least privilege, hardened nodes, no plaintext secrets.
 6. **Horizontal scale** — add hosting nodes without rearchitecting the control plane.
+7. **Self-hosted first** — prefer open components on our own hardware; third-party
+   services only where physics or licensing force it, each recorded in an ADR
+   ([0003](docs/adr/0003-cloudflare-dns-and-ingress.md), [0004](docs/adr/0004-external-services-at-launch.md)).
 
 **Non-goals:** building our own web server, DNS server, or mail stack. We
 orchestrate proven components through Hestia.
@@ -31,6 +34,8 @@ OpenCloud separates **what it owns** from **what it orchestrates**:
 
 The control plane drives the data plane exclusively through the **provisioner**
 (Hestia API + CLI). Nothing else touches a node. See [ADR 0001](docs/adr/0001-hestia-as-provisioning-backend.md).
+The provisioner is likewise the sole caller of the **Cloudflare API**, which
+provides customer DNS and the ingress tunnel ([ADR 0003](docs/adr/0003-cloudflare-dns-and-ingress.md)).
 
 ## 3. System diagram
 
@@ -39,6 +44,10 @@ The control plane drives the data plane exclusively through the **provisioner**
                        │      Customers / Admins        │
                        └───────────────┬───────────────┘
                                        │ HTTPS
+                       ┌───────────────▼───────────────┐
+                       │ Cloudflare (DNS · WAF · edge)  │   ← edge (ADR 0003)
+                       └───────────────┬───────────────┘
+                                       │ Cloudflare Tunnel (cloudflared, outbound-only)
                        ┌───────────────▼───────────────┐
                        │   Next.js Dashboard (SSR/BFF)  │   ← control plane
                        └───────────────┬───────────────┘
@@ -63,6 +72,7 @@ The control plane drives the data plane exclusively through the **provisioner**
 
       Monitoring: Prometheus scrapes API + nodes → Grafana dashboards
       Host hardening: Fail2ban + UFW on every node
+      DNS: provisioner manages customer zones via the Cloudflare API (ADR 0003)
 ```
 
 ## 4. Backend layering
@@ -182,6 +192,7 @@ Isolation is the platform's #1 invariant, enforced at three layers:
 | **Next.js** | SSR dashboard + BFF for secure token handling. |
 | **shadcn/ui + Tailwind** | Own the components; no heavyweight UI dependency. |
 | **Hestia** | Proven multi-tenant hosting stack we orchestrate, not rebuild. |
+| **Cloudflare** | Free authoritative DNS (zones via API) + Tunnel ingress — self-hosted nodes reachable behind CGNAT, DDoS/WAF at the edge ([ADR 0003](docs/adr/0003-cloudflare-dns-and-ingress.md)). |
 | **Prometheus/Grafana** | De-facto standard metrics + dashboards. |
 
 Each significant choice should also have an ADR in [`docs/adr/`](docs/adr/).

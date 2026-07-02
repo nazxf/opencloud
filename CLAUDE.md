@@ -23,8 +23,10 @@ Full context: [`README.md`](README.md) · [`ARCHITECTURE.md`](ARCHITECTURE.md) �
 ## 2. Tech stack (authoritative)
 
 - **Backend:** Go · Gin · Bun ORM · PostgreSQL · Redis · Viper · Zap
+  — approved libs: `golang-jwt/jwt/v5` · `x/crypto` (argon2id) · `google/uuid` · `prometheus/client_golang` · `go-redis/redis_rate` · `testify` (tests). Full list: [`docs/BACKEND.md`](docs/BACKEND.md#13-approved-dependencies)
 - **Frontend:** Next.js (App Router) · React · TypeScript · Tailwind CSS · shadcn/ui · Lucide React · GSAP (marketing animations only)
-- **Hosting:** Hestia · Nginx · Apache · PHP-FPM · MariaDB · BIND9 · Certbot
+  — approved libs (dashboard phase): TanStack Query · TanStack Table · react-hook-form + zod · Recharts · Vitest + Testing Library (tests)
+- **Hosting:** Hestia · Nginx · Apache · PHP-FPM · MariaDB · Certbot · Cloudflare (DNS + Tunnel — ADR 0003) · BIND9 (fallback only)
 - **Platform:** Docker · Docker Compose · Prometheus · Grafana · Fail2ban · UFW
 
 Do **not** introduce technologies outside this list without explicit approval.
@@ -52,12 +54,13 @@ Architecture decisions are recorded in [`docs/adr/`](docs/adr/).
 ## 4. Architecture in one screen
 
 ```
-Customer/Admin → Next.js dashboard → Go/Gin API (/api/v1, JWT)
-                                       ├─ PostgreSQL (Bun)   system of record · job queue
-                                       ├─ Redis              cache · sessions · rate limits
-                                       └─ Provisioner ──→ Hestia node
-                                                            (Nginx · Apache · PHP-FPM ·
-                                                             MariaDB · BIND9 · Certbot)
+Customer/Admin → Cloudflare (DNS · Tunnel) → Next.js dashboard → Go/Gin API (/api/v1, JWT)
+                                               ├─ PostgreSQL (Bun)   system of record · job queue
+                                               ├─ Redis              cache · sessions · rate limits
+                                               └─ Provisioner ──→ Hestia node
+                                                              │      (Nginx · Apache · PHP-FPM ·
+                                                              │       MariaDB · Certbot)
+                                                              └──→ Cloudflare API (DNS zones)
 ```
 
 **Backend layering — never skip a layer:**
@@ -69,7 +72,8 @@ handler (Gin) → service (logic, transactions) → repository (Bun) → Postgre
 - Handlers translate HTTP ↔ domain; **no business logic, no DB access**.
 - Services own business rules and transactions; the only layer spanning repos/provisioner.
 - Repositories own all DB access; **every customer query is scoped by `account_id`**.
-- The provisioner is the **only** thing that talks to a hosting node, and it is idempotent.
+- The provisioner is the **only** thing that talks to a hosting node or the
+  Cloudflare API, and it is idempotent.
 - Work that can exceed ~1s is **enqueued as a `jobs` row** (same transaction as the
   write that triggered it) and handled by the worker, not run inline.
 
@@ -99,7 +103,7 @@ handler (Gin) → service (logic, transactions) → repository (Bun) → Postgre
 - ❌ Business logic in handlers or React components.
 - ❌ DB access outside repositories; SQL built by string concatenation.
 - ❌ Querying customer data without an `account_id` scope.
-- ❌ Talking to a hosting node from anywhere but the provisioner.
+- ❌ Talking to a hosting node or the Cloudflare API from anywhere but the provisioner.
 - ❌ Tokens in `localStorage`; logging secrets; committing `.env`.
 - ❌ `any` in TypeScript; `interface{}` as a lazy escape hatch in Go.
 - ❌ Floats for money; non-UTC timestamps; magic numbers.

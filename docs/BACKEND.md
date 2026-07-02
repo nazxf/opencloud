@@ -235,3 +235,21 @@ func (ProvisionSite) Kind() string { return "provision_site" }
 - No global mutable state except the config and logger singletons.
 - Tests: table-driven units with mocks; integration against a disposable Postgres.
   See [`TESTING.md`](TESTING.md).
+
+## 13. Approved dependencies
+
+Beyond the core stack (Gin, Bun, go-redis, Viper, Zap), these are pre-approved —
+anything else needs the justification + confirmation required by `CLAUDE.md` §5.4:
+
+| Library | Use for | Not for |
+|---|---|---|
+| `golang-jwt/jwt/v5` | Access/refresh token signing & parsing | — |
+| `golang.org/x/crypto` | Password hashing (**argon2id**) | Inventing crypto |
+| `google/uuid` | Entity + job IDs | — |
+| `prometheus/client_golang` | `/metrics` endpoint, counters/histograms | — |
+| `go-redis/redis_rate` | Rate limiting middleware | Queueing (ADR 0002) |
+| `stretchr/testify` | `require`/`assert` in tests | Mock generation frameworks |
+
+Deliberately **not** used: a validation lib (Gin bundles `validator/v10`), a
+migration tool (Bun has `bun/migrate`), an HTTP client lib (stdlib `net/http`),
+a decimal lib (money is `int64` cents — see `CODING_STANDARDS.md`).

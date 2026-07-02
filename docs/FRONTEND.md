@@ -7,6 +7,13 @@ Design and UX rules: [`UI_GUIDELINES.md`](UI_GUIDELINES.md).
 **Stack:** Next.js (App Router) · React 19 · TypeScript (strict) · Tailwind CSS ·
 shadcn/ui · Lucide React · GSAP (`@gsap/react`) · Geist fonts via `@fontsource`.
 
+**Approved for the dashboard phase** (add when the need lands, not before):
+**TanStack Query** (server state + job-status polling) · **react-hook-form + zod**
+(forms — what shadcn/ui `Form` is built on) · **TanStack Table** (data tables) ·
+**Recharts** (usage charts — what shadcn/ui charts are built on) ·
+**Vitest + Testing Library** (tests — [`TESTING.md`](TESTING.md#6-frontend-tests)).
+Anything else follows the `CLAUDE.md` §5.4 approval rule.
+
 > **Migration note:** the app has migrated off Vite to the Next.js App Router and now
 > lives at the **repo root** (not under `frontend/`). Landing-page components still
 > live in `src/`; port them into `app/`/`components/` as the dashboard grows. The
@@ -94,7 +101,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 ## 4. State management
 
 - **Server state** (data from the backend) is fetched in Server Components or
-  cached route handlers — not mirrored into a global client store.
+  cached route handlers — not mirrored into a global client store. Where the
+  client must own it (mutations, job-status polling until `active|failed`),
+  use **TanStack Query**; don't hand-roll `useEffect` fetch loops.
 - **Client state** is local (`useState`/`useReducer`) or, for cross-tree concerns
   (theme, current user), a small React Context. No Redux unless a real need appears.
 - Prefer URL/searchParams for shareable state (filters, pagination) over client state.
@@ -128,8 +137,11 @@ export function NodeBadge({ online, className }: { online: boolean; className?: 
 
 ## 6. Forms & validation
 
-- Forms are controlled and validated client-side for UX, then **always**
-  re-validated server-side. Never trust the browser.
+- Forms use **react-hook-form + zod** through the shadcn/ui `Form` primitives —
+  one pattern for every form; the zod schema is the single client-side
+  definition of a form's shape.
+- Client-side validation is UX only — the backend **always** re-validates.
+  Never trust the browser.
 - Show field-level errors mapped from the backend's validation envelope.
 - Destructive actions (delete site, suspend account) require an explicit confirm dialog.
 

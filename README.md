@@ -29,10 +29,12 @@ Hestia as a provisioning backend.
 ## Features
 
 - **Website management** — create, suspend, and delete sites across hosting nodes.
-- **Domains & DNS** — register domains, manage BIND9 zones and records.
+- **Domains & DNS** — connect your own domain; zones and records managed via
+  Cloudflare ([ADR 0003](docs/adr/0003-cloudflare-dns-and-ingress.md)).
 - **Databases** — provision and manage MariaDB databases and users.
 - **SSL** — automatic Let's Encrypt issuance and renewal via Certbot.
-- **Email, FTP/SSH, cron** — full account lifecycle per customer.
+- **Email, FTP/SSH, cron** — full account lifecycle per customer (email lands
+  post-launch — [ADR 0004](docs/adr/0004-external-services-at-launch.md)).
 - **Resource monitoring** — per-account CPU, RAM, disk, and bandwidth in Grafana.
 - **Multi-tenant isolation** — strict per-customer separation enforced end to end.
 - **Automation-first** — provisioning, suspension, and teardown are fully API-driven.
@@ -43,7 +45,7 @@ Hestia as a provisioning backend.
 |---|---|
 | **Backend** | Go · Gin · Bun ORM · PostgreSQL · Redis · Viper · Zap |
 | **Frontend** | Next.js · React · TypeScript · Tailwind CSS · shadcn/ui · Lucide React · GSAP |
-| **Hosting** | Hestia Control Panel · Nginx · Apache · PHP-FPM · MariaDB · BIND9 · Certbot |
+| **Hosting** | Hestia Control Panel · Nginx · Apache · PHP-FPM · MariaDB · Certbot · Cloudflare (DNS + Tunnel) |
 | **Platform** | Docker · Docker Compose |
 | **Monitoring** | Prometheus · Grafana |
 | **Security** | Fail2ban · UFW |

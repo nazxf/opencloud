@@ -26,6 +26,8 @@ Stand up the skeleton everything else hangs off.
 - ⏳ PostgreSQL + Redis wired via Docker Compose
 - ⏳ Bun migration tooling + initial schema (`accounts`, `users`)
 - ⏳ Health/readiness endpoints + Prometheus metrics endpoint
+- ⏳ Hestia integration spike (local VM): validate API auth/key-scoping and
+  idempotency assumptions (ADR 0001) before Phase 2 builds on them
 - 🚧 CI: frontend (oxlint · tsc · build · audit) ✅; Go jobs land with the backend scaffold
 
 **Exit criteria:** `docker compose up` brings up dashboard + API + datastores; a
@@ -53,14 +55,17 @@ The heart of the platform: drive Hestia.
 - Site lifecycle: create → active → suspend → delete (async, status-polled)
 - Database lifecycle: MariaDB DB + user provisioning
 - Reconciliation job: detect/repair control-plane ↔ node drift
+- Basic control-plane backups: scheduled `pg_dump` + one rehearsed restore
 
 **Exit criteria:** a customer can create and delete a working website from the
-dashboard, backed by a real Hestia node.
+dashboard, backed by a real Hestia node — and the control-plane DB is backed up
+on a schedule with a tested restore.
 
 ## Phase 3 — Domains, DNS & SSL ⏳
 
-- Domain management + linking to sites
-- BIND9 DNS zone + record management through the provisioner
+- Domain management + linking to sites (bring-your-own-domain — ADR 0004)
+- Cloudflare DNS zone + record management through the provisioner (ADR 0003)
+- Cloudflare Tunnel ingress (`cloudflared`) for dashboard, API, and customer sites
 - Automatic Let's Encrypt issuance/renewal via Certbot
 - DNS propagation + certificate status surfaced in the UI
 
@@ -68,16 +73,21 @@ dashboard, backed by a real Hestia node.
 
 ## Phase 4 — Email, FTP/SSH & cron ⏳
 
-- Mailbox provisioning and management
-- FTP/SSH account lifecycle
+- Mailbox provisioning and management — gated on a clean-IP outbound mail path;
+  never sent from residential IPs (ADR 0004)
+- FTP/SSH account lifecycle (web file manager first; raw FTP/SFTP needs
+  non-tunnel ingress — ADR 0003)
 - Cron job management per account
 - File usage and quota enforcement surfaced in the UI
+- Usage metering pipeline: worker polls per-account stats (disk, bandwidth —
+  `v-list-user-stats`) from nodes into Postgres, so Phase 5 billing has history
 
 ## Phase 5 — Billing & plans ⏳
 
 - Plans + subscriptions + entitlements
-- Usage metering (disk, bandwidth) tied to plan limits
-- Payment provider integration + invoices
+- Usage metering (disk, bandwidth) tied to plan limits (pipeline from Phase 4)
+- Payments: manual bank transfer + admin confirmation first, then payment
+  gateway integration + invoices (ADR 0004)
 - Suspension/dunning workflow on non-payment
 
 ## Phase 6 — Observability & ops ⏳
@@ -85,7 +95,7 @@ dashboard, backed by a real Hestia node.
 - Per-account resource dashboards in Grafana
 - Alerting (node down, disk pressure, cert expiry, failed jobs)
 - Node hardening automation (Fail2ban, UFW) as repeatable bootstrap
-- Backups + restore runbooks
+- Full backup strategy + restore runbooks (basic `pg_dump` lands in Phase 2)
 - Incident runbooks in `docs/runbooks/`
 
 ## Phase 7 — Scale & polish ⏳
@@ -101,6 +111,8 @@ dashboard, backed by a real Hestia node.
 ## Longer-term ideas (unscheduled)
 
 - Reseller accounts (sub-tenants under a customer)
+- Registrar (reseller API) integration to sell domains directly — launch is
+  bring-your-own-domain (ADR 0004)
 - One-click app installers (WordPress, etc.)
 - Staging environments / git-based deploys for customer sites
 - Public API + API keys for power users
