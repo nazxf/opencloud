@@ -14,6 +14,11 @@ Change groups: **Added**, **Changed**, **Deprecated**, **Removed**, **Fixed**,
 ## [Unreleased]
 
 ### Added
+- `.env.example` with documented, non-secret defaults (referenced by README and
+  `docs/INFRASTRUCTURE.md` but previously missing).
+- CI workflow (`.github/workflows/ci.yml`): frontend lint, type-check, build,
+  and dependency audit on every PR and push to `main`. Go jobs are added when
+  the backend scaffold lands.
 - Complete project documentation set: `README.md`, `CLAUDE.md`, `ARCHITECTURE.md`,
   `ROADMAP.md`, `CHANGELOG.md`, and `docs/` (backend, frontend, database, API,
   hosting, infrastructure, security, deployment, coding standards, testing, UI

@@ -26,7 +26,7 @@ Stand up the skeleton everything else hangs off.
 - ⏳ PostgreSQL + Redis wired via Docker Compose
 - ⏳ Bun migration tooling + initial schema (`accounts`, `users`)
 - ⏳ Health/readiness endpoints + Prometheus metrics endpoint
-- ⏳ CI: build, lint (`golangci-lint`, `oxlint`), test
+- 🚧 CI: frontend (oxlint · tsc · build · audit) ✅; Go jobs land with the backend scaffold
 
 **Exit criteria:** `docker compose up` brings up dashboard + API + datastores; a
 user can register and log in.
